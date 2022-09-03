@@ -116,9 +116,6 @@ BLUEPRINT = os.environ.get("ORBIT_BLUEPRINT")
 if os.path.exists(BLUEPRINT) == False:
     exit("blueprint file does not exist in build directory '"+BUILD_DIR+"'")
 
-# change directory to build
-os.chdir(BUILD_DIR)
-
 # --- collect data from the blueprint ------------------------------------------
 
 # list of (lib, path)
