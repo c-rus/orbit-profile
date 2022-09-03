@@ -1,0 +1,6 @@
+[[template]]
+alias = "std"
+path = "template/"
+ignore = [
+    "extra/"
+]
