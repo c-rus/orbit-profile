@@ -1,0 +1,10 @@
+; ----- Action Expansion Board -------------------------------------------------
+; NOTE: All inputs are active-low.
+; ------------------------------------------------------------------------------
+; PIN_AB10 = __           ; ACTION_BTN_0     GPIO Connection [20] 3.3-V LVTTL
+; PIN_AA5  = __           ; ACTION_BTN_1     GPIO Connection [30] 3.3-V LVTTL
+; PIN_AB12 = __           ; ACTION_BTN_2     GPIO Connection [16] 3.3-V LVTTL
+; PIN_AB3  = __           ; ACTION_BTN_3     GPIO Connection [32] 3.3-V LVTTL
+; PIN_Y3   = __           ; ACTION_KNOB_CH_A GPIO Connection [33] 3.3-V LVTTL
+; PIN_AA2  = __           ; ACTION_KNOB_CH_B GPIO Connection [35] 3.3-V LVTTL
+; PIN_Y4   = __           ; ACTION_KNOB_BTN  GPIO Connection [31] 3.3-V LVTTL 

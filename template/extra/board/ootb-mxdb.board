@@ -1,0 +1,113 @@
+; ------------------------------------------------------------------------------
+; File: Intel OOTB max10 db FPGA board file
+; Version: 2.0.0
+; About:
+;   .ini file for mapping top-level ports to physical Intel FPGA pins. 
+;
+;   Code proceeding a ';' will be ignored. Pins have format "PIN_# = <PORT>". 
+;   Mapping is processed in Quartus by adding a TCL command for assigning each
+;   assigned pin during implementation (place-and-route).
+;
+; Usage:
+;   1. Uncomment any pins to be assigned
+;   2. Replace '__' with the port name found in the HDL top-level entity
+;
+; Help:
+;   Manual: https://mil.ufl.edu/3701/docs/OOTB_Max10/General%20Docs/MXDB/MXDB%20Manual.pdf
+;
+; Revisions:
+;   - makes .board an ini-syntax
+;   - initial file creation
+; ------------------------------------------------------------------------------
+
+
+; ----- Device -----------------------------------------------------------------
+; NOTE: Required Quartus device settings for Intel OOTB max10 DB FPGA.
+; ------------------------------------------------------------------------------
+FAMILY = MAX10
+DEVICE = 10M02SCU169C8G
+
+
+; ----- Clocks -----------------------------------------------------------------
+; ------------------------------------------------------------------------------
+; PIN_H6 = __               ; CLK0p FTDI USB IC (6 MHz default) 3.3-V
+; PIN_H4 = __               ; CLK1p On-board Oscillator (4 MHz) 3.3-V
+
+
+; ----- LEDs -------------------------------------------------------------------
+; NOTE: ON with high logic level, OFF with low logic level.
+; ------------------------------------------------------------------------------
+; PIN_L12 = __              ; D3 General status LED 3.3-V
+; PIN_E10 = __              ; D4 General status LED 3.3-V
+
+
+; ----- GPIO -------------------------------------------------------------------
+; ------------------------------------------------------------------------------
+; PIN_G9  = __              ; IO/CLK C2P 3.3-V
+; PIN_F12 = __              ; IO 3.3-V
+; PIN_E3  = __              ; IO 3.3-V
+; PIN_E4  = __              ; IO 3.3-V
+; PIN_F4  = __              ; IO 3.3-V
+; PIN_G4  = __              ; IO 3.3-V
+; PIN_J7  = __              ; IO 3.3-V
+; PIN_H3  = __              ; IO 3.3-V
+; PIN_H2  = __              ; IO 3.3-V
+; PIN_K5  = __              ; IO 3.3-V
+; PIN_J2  = __              ; IO 3.3-V
+; PIN_K2  = __              ; IO 3.3-V
+; PIN_L2  = __              ; IO 3.3-V
+; PIN_J5  = __              ; IO 3.3-V
+; PIN_L5  = __              ; IO 3.3-V
+; PIN_L4  = __              ; IO 3.3-V
+; PIN_J6  = __              ; IO 3.3-V
+; PIN_K6  = __              ; IO 3.3-V
+
+; PIN_F13 = __              ; IO/CLK C3P 3.3-V
+; PIN_D11 = __              ; IO 3.3-V
+; PIN_M12 = __              ; IO 3.3-V
+; PIN_M11 = __              ; IO 3.3-V
+; PIN_M10 = __              ; IO 3.3-V
+; PIN_M9  = __              ; IO 3.3-V
+; PIN_K12 = __              ; IO 3.3-V
+; PIN_K8  = __              ; IO 3.3-V
+; PIN_J8  = __              ; IO 3.3-V
+; PIN_H8  = __              ; IO 3.3-V
+; PIN_K7  = __              ; IO 3.3-V
+; PIN_G13 = __              ; IO 3.3-V
+; PIN_H13 = __              ; IO 3.3-V
+; PIN_J13 = __              ; IO 3.3-V
+; PIN_L13 = __              ; IO 3.3-V
+; PIN_M13 = __              ; IO 3.3-V
+; PIN_N12 = __              ; IO 3.3-V
+; PIN_N10 = __              ; IO 3.3-V
+
+
+; ----- 7-Segment Displays -----------------------------------------------------
+; NOTE: ON with low logic level, OFF with high logic level.
+;              A
+;          ========
+;     F  //      //  B
+;       //  G   //
+;       ========
+;  E  //      //  C
+;    //      //
+;    ========    * DP
+;       D
+; ------------------------------------------------------------------------------
+; PIN_H10 = __              ; U8A  Seven Segment Digit U8[0] 3.3-V
+; PIN_F8  = __              ; U8B  Seven Segment Digit U8[1] 3.3-V
+; PIN_E8  = __              ; U8C  Seven Segment Digit U8[2] 3.3-V
+; PIN_J12 = __              ; U8D  Seven Segment Digit U8[3] 3.3-V
+; PIN_H9  = __              ; U8E  Seven Segment Digit U8[4] 3.3-V
+; PIN_J10 = __              ; U8F  Seven Segment Digit U8[5] 3.3-V
+; PIN_L11 = __              ; U8G  Seven Segment Digit U8[6] 3.3-V
+; PIN_E9  = __              ; U8DP Seven Segment Digit U8[7], DP 3.3-V
+
+; PIN_D9  = __              ; U7A  Seven Segment Digit U7[0] 3.3-V
+; PIN_C9  = __              ; U7B  Seven Segment Digit U7[1] 3.3-V
+; PIN_G12 = __              ; U7C  Seven Segment Digit U7[2] 3.3-V
+; PIN_L10 = __              ; U7D  Seven Segment Digit U7[3] 3.3-V
+; PIN_K10 = __              ; U7E  Seven Segment Digit U7[4] 3.3-V
+; PIN_J9  = __              ; U7F  Seven Segment Digit U7[5] 3.3-V
+; PIN_E6  = __              ; U7G  Seven Segment Digit U7[6] 3.3-V
+; PIN_E12 = __              ; U7DP Seven Segment Digit U7[7], DP 3.3-V
