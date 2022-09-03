@@ -5,3 +5,38 @@ path = "template/"
 ignore = [
     "extra/"
 ]
+
+[[plugin]]
+alias = "quartus"
+summary = "Complete toolflow for Intel Quartus Prime backend program"
+command = "python"
+args = ["./plugin/quartus.py"]
+fileset.pin-plan = "*.board"
+fileset.bdf-file = "*.bdf"
+details = """
+Orbit plugin for Intel Quartus Prime toolflow.
+
+USAGE
+    orbit build -- [TOOLFLOW] [OPTIONS]
+    
+TOOLFLOW: 
+    --synth         perform analysis and elaboration
+    --route         fit the design to the board and assign pins
+    --bitstream     generate a bitstream file for programming to FPGA
+    --sta           run a static timing analysis
+    --eda-netlist   use MAXII device for .SDO and .VHO files in timing sim
+    --compile       run through entire flow
+
+OPTIONS:
+    --open          create the project and open it in quartus GUI
+    --pgm-soft      upload .sof file to connected FPGA (SRAM Object Files)
+    --pgm-hard      upload .pof file to connected FPGA (Programmer Object Files)
+    --include-sim   include the project's top-level simulation files
+
+ENVIRONMENT:
+    QUARTUS_PATH    filesystem path to Quartus binaries
+
+    Toolflows actions will perform necessary preceding steps. Options are extra
+    arguments available alongside toolflows. Environment variables are 
+    optionally set key/value pairs under [env] in Orbit's config.toml.
+"""
