@@ -1,20 +1,13 @@
 # ------------------------------------------------------------------------------
-# Script: quartus.py
-# Author: Chase Ruskin
-# Modified: 05/17/2022
-# Created:  08/30/2021
-# Abstract:
-#   A Quartus plugin for orbit- HDL package manager and development tool.
-# Default:
-#   Creates a quartus project.
-# Help:
-#   Use '-h' or '--help' display help prompt and exit.
-# Filesets:
-#   BDF-FILE = "*.bdf"
-#   PIN-PLAN = "*.board"
+# Script   : quartus.py
+# Author   : Chase Ruskin
+# Modified : 2022/09/03
+# Created  : 2021/08/30
+# Details  :
+#   By default creates a Quartus project.
 #
-# Quartus TCL Reference Guide:
-# https://www.intel.co.jp/content/dam/altera-www/global/ja_JP/pdfs/literature/an/an312.pdf
+#   Quartus TCL Reference Guide:
+#   https://www.intel.co.jp/content/dam/altera-www/global/ja_JP/pdfs/literature/an/an312.pdf
 # ------------------------------------------------------------------------------
 import os,sys,subprocess
 
@@ -68,9 +61,6 @@ CABLE = "USB-Blaster"
 # skip over the first argument (this script's filepath)
 args = sys.argv[1:]
 
-# display help prompt
-help_prompt = args.count('--help') or args.count('-h')
-
 # determine if to program the FPGA board
 pgm_temporary = args.count('--pgm-soft')
 pgm_permanent = args.count('--pgm-hard')
@@ -112,32 +102,24 @@ else:
 #   we can act accordingly on that data to get the ouptut we want.
 # ==============================================================================
 
-# check if user wanted to display help and exit
-if(help_prompt):
-    print('''\
-Orbit plugin for Quartus toolflow.
+# --- verify the planning phase was previously ran -----------------------------
 
-USAGE
-    python quartus.py [TOOLFLOW] [OPTIONS]
-    
-TOOLFLOWS- each action will perform necessary preceding steps:
-    --synth         perform analysis and elaboration
-    --route         fit the design to the board and assign pins
-    --bitstream     generate a bitstream file for programming to FPGA
-    --sta           run a static timing analysis
-    --eda-netlist   use MAXII device for .SDO and .VHO files in timing sim
-    --compile       run through entire flow
+# verify the build directory exists
+BUILD_DIR = os.environ.get("ORBIT_BUILD_DIR")
+try:
+    os.chdir(BUILD_DIR)
+except:
+    exit("build directory '"+str(BUILD_DIR)+"' does not exist")
 
-OPTIONS- extra arguments available alongside toolflows:
-    --open          create the project and open it in quartus GUI
-    --pgm-soft      upload .sof file to connected FPGA (SRAM Object Files)
-    --pgm-hard      upload .pof file to connected FPGA (Programmer Object Files)
-    --include-sim   include the project's top-level simulation files
+# verify a blueprint exists
+BLUEPRINT = os.environ.get("ORBIT_BLUEPRINT")
+if os.path.exists(BLUEPRINT) == False:
+    exit("blueprint file does not exist in build directory '"+BUILD_DIR+"'")
 
-ENVIRONMENT- optionally set key/value pairs under [env] in Orbit's config.toml:
-    QUARTUS_PATH    filesystem path to Quartus binaries
-''')
-    exit()
+# change directory to build
+os.chdir(BUILD_DIR)
+
+# --- collect data from the blueprint ------------------------------------------
 
 # list of (lib, path)
 vhdl_files = []
@@ -147,40 +129,32 @@ bdf_files = []
 # list of tuples (pin, port)
 pin_assignments = []
 
-build_dir = os.environ.get("ORBIT_BUILD_DIR")
-if build_dir == None:
-    exit("error: orbit build directory not detected")
-
-# change directory to build
-os.chdir(build_dir)
-
 # open the blueprint file
-with open('blueprint.tsv', 'r') as blueprint:
-    lines = blueprint.readlines()
-    for rule in lines:
-        fileset,name,path = rule.strip().split('\t')
+with open(BLUEPRINT, 'r') as blueprint:
+    for rule in blueprint.readlines():
+        fileset, name, path = rule.strip().split('\t')
         # add VHDL source files
-        if(fileset == "VHDL-RTL"):
+        if fileset == "VHDL-RTL":
             vhdl_files.append((name, path))
             pass
         # add VHDL simulation files if explicitly requested
-        elif(fileset == "VHDL-SIM" and ignore_sim == False):
+        elif fileset == "VHDL-SIM" and ignore_sim == False:
             vhdl_files.append((name, path))
             pass
         # add Verilog source files
-        elif(fileset == "VLOG-RTL"):
+        elif fileset == "VLOG-RTL":
             vlog_files.append((name, path))
             pass
         # add Verilog simulation files if explicitly requested
-        elif(fileset == "VLOG-SIM" and ignore_sim == False):
+        elif fileset == "VLOG-SIM" and ignore_sim == False:
             vlog_files.append((name, path))
             pass
         # custom fileset: add board design files
-        elif(fileset == "BDF-FILE"):
+        elif fileset == "BDF-FILE":
             bdf_files.append(path)
             pass
         # custom fileset: capture information regarding pin planning
-        elif(fileset == "PIN-PLAN"):
+        elif fileset == "PIN-PLAN":
             # custom parsing of file to get necessary pin->port data
             with open(path) as pin_file:
                 placements = pin_file.readlines()
@@ -212,6 +186,8 @@ with open('blueprint.tsv', 'r') as blueprint:
                     # configures the pin mappings
                     else:
                         pin_assignments.append((pin,name))
+                    pass
+                pass
             pass
     blueprint.close()
     pass
@@ -263,7 +239,7 @@ tcl_contents = """load_package flow
 # files that exist
 project_new """ + PROJECT + """ -revision """ + PROJECT + """ -overwrite
 # Set the device
-set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_1993
 set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VHDL" -section_id EDA_SIMULATION
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id EDA_SIMULATION
@@ -298,25 +274,25 @@ with open(TCL_SCRIPT, 'w') as f:
 # ---[2] Run quartus with TCL script
 
 # execute quartus using the written tcl script
-execute('quartus_sh','-t',TCL_SCRIPT)
+execute('quartus_sh','-t', TCL_SCRIPT)
 
 # ---[3] Perform a specified toolflow
 
 # synthesize design
 if(synth):
-    execute("quartus_map",PROJECT)
+    execute("quartus_map", PROJECT)
 # route design to board
 if(impl):
-    execute("quartus_fit",PROJECT)
+    execute("quartus_fit", PROJECT)
 # generate bitstream
 if(asm):
-     execute("quartus_asm",PROJECT)
+     execute("quartus_asm", PROJECT)
 # perform static timing analysis
 if(sta):
-    execute("quartus_sta",PROJECT)
+    execute("quartus_sta", PROJECT)
 # generate necessary files for timing simulation
 if(eda_netlist):
-    execute('quartus_eda',PROJECT,'--simulation')
+    execute('quartus_eda', PROJECT, '--simulation')
 
 # ---[4] Program the FPGA board
 
@@ -349,5 +325,5 @@ elif(pgm_permanent):
 # ---[5] Open the quartus project
 
 # open the project using quartus GUI
-if(open_project):
-    execute('quartus',PROJECT+'.qpf',subproc=open_project)
+if open_project == True:
+    execute('quartus', PROJECT+'.qpf', subproc=open_project)

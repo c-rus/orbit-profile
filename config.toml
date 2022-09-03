@@ -6,6 +6,7 @@ ignore = [
     "extra/"
 ]
 
+
 [[plugin]]
 alias = "quartus"
 summary = "Complete toolflow for Intel Quartus Prime backend program"
@@ -14,29 +15,62 @@ args = ["./plugin/quartus.py"]
 fileset.pin-plan = "*.board"
 fileset.bdf-file = "*.bdf"
 details = """
-Orbit plugin for Intel Quartus Prime toolflow.
+Toolflow actions will perform necessary preceding steps (synth, route, 
+bitstream, sta). Options are extra arguments available alongside toolflows. 
+Environment variables are optionally set key/value pairs under [env] in Orbit's
+config.toml.
 
-USAGE
-    orbit build -- [TOOLFLOW] [OPTIONS]
+Usage:
+    orbit build --plugin quartus -- [options]
     
-TOOLFLOW: 
+Options:
     --synth         perform analysis and elaboration
     --route         fit the design to the board and assign pins
     --bitstream     generate a bitstream file for programming to FPGA
     --sta           run a static timing analysis
     --eda-netlist   use MAXII device for .SDO and .VHO files in timing sim
     --compile       run through entire flow
-
-OPTIONS:
     --open          create the project and open it in quartus GUI
     --pgm-soft      upload .sof file to connected FPGA (SRAM Object Files)
     --pgm-hard      upload .pof file to connected FPGA (Programmer Object Files)
     --include-sim   include the project's top-level simulation files
 
-ENVIRONMENT:
-    QUARTUS_PATH    filesystem path to Quartus binaries
+Environment:
+    ORBIT_ENV_QUARTUS_PATH    filesystem path to Quartus binaries
 
-    Toolflows actions will perform necessary preceding steps. Options are extra
-    arguments available alongside toolflows. Environment variables are 
-    optionally set key/value pairs under [env] in Orbit's config.toml.
+Dependencies:
+    Python (tested: 3.8.6)
+    Intel Quartus Prime (tested: 19.1)
+"""
+
+
+[[plugin]]
+alias   = "ghdl"
+summary = "Backend script for simulating VHDL with GHDL"
+command = "python"
+args    = ["./plugin/ghdl.py"]
+fileset.py-model = "{{orbit.bench}}.py"
+details = """
+Analyzes and simulates a testbench with GHDL. If a vcd viewer program is 
+specified with the corresponding environment variable and --view is used, then 
+the vcd file will be the first argument to the command.
+
+Generics set on the command-line with '--generic' are synchronized with the ghdl
+simulation and the Python software model script. Generics are entered in the
+Python model script as command-line arguments in the format '-g=<key>=<value>'.
+
+Usage:
+    orbit build --plugin ghdl -- [options]
+
+Options:
+    --view                          open the vcd file in a vcd viewer
+    --generic, -g <name>=<value>    override a testbench generic
+
+Environment:
+    ORBIT_ENV_GHDL_PATH         command to invoke ghdl program
+    ORBIT_ENV_VCD_VIEWER        command to invoke a vcd program
+
+Dependencies:
+    GHDL (tested: 3.0.0-dev (2.0.0.r101.g791ff0c1) [Dunoon edition])
+    Python (tested: 3.8.6)
 """
