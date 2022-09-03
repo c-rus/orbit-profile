@@ -1,5 +1,6 @@
 [[template]]
 alias = "std"
+summary = "basic project structure with rtl/ and sim/"
 path = "template/"
 ignore = [
     "extra/"
