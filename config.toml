@@ -67,10 +67,41 @@ Options:
     --generic, -g <name>=<value>    override a testbench generic
 
 Environment:
-    ORBIT_ENV_GHDL_PATH         command to invoke ghdl program
-    ORBIT_ENV_VCD_VIEWER        command to invoke a vcd program
+    ORBIT_ENV_GHDL_PATH         path to invoke GHDL binary
+    ORBIT_ENV_VCD_VIEWER        path to invoke a VCD program
 
 Dependencies:
     GHDL (tested: 3.0.0-dev (2.0.0.r101.g791ff0c1) [Dunoon edition])
     Python (tested: 3.8.6)
+"""
+
+
+[[plugin]]
+alias   = "viv-no-xpr"
+summary = "Backend Vivado non-project mode toolflow"
+command = "vivado"
+args    = ["-mode", "batch", "-nojournal", "-nolog", "-source", "./plugin/viv-no-xpr.tcl", "-tclargs"]
+fileset.xil-xdc = "*.xdc"
+details = """
+Provides entire basic toolchain for Xilinx Vivado: synthesis, implementation,
+and generating bitstream. The default process is to only perform synthesis on
+the targeted top-level. Any process chosen will also execute the processes 
+required before it (synth -> impl -> route -> bit).
+
+Usage:
+    orbit build --plugin viv-no-xpr -- [options]
+
+Options:
+    --synth     analysis & synthesis
+    --impl      implementation & optimization
+    --route     route design
+    --bit       generate a bitstream
+    --pgm       program the board with a bit file
+    --clean     remove all files already in output directory
+
+Environment:
+    ORBIT_ENV_VIVADO_PATH       path to invoke vivado binaries
+
+Dependencies:
+    Vivado (tested: 2019.2 (64-bit))
 """

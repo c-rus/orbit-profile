@@ -27,7 +27,8 @@
 #     disclaims any implied warranties of fitness for a particular purpose.
 #                      Copyright(c) 2012 Avnet, Inc.
 #                              All rights reserved.
-# 
+#   Part:
+#     XC7Z020-1CLG484
 # ----------------------------------------------------------------------------
 # 
 #  Notes:
