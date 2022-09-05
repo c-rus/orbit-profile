@@ -75,6 +75,40 @@ Dependencies:
     Python (tested: 3.8.6)
 """
 
+[[plugin]]
+alias = "msim"
+summary = "Backend script for simulating HDL with ModelSim"
+command = "python"
+args    = ["./plugin/modelsim.py"]
+fileset.py-model = "{{orbit.bench}}.py"
+fileset.do-file = "{{orbit.bench}}.do"
+details = """
+Compiles HDL files and runs a simulation in batch mode through ModelSim Altera.
+
+Generics set on the command-line with '--generic' are synchronized with the
+ModelSim simulation and the Python software model script. Generics are entered 
+in the Python model script as command-line arguments in the format 
+'-g=<key>=<value>'.
+
+Usage:
+    orbit build --plugin msim -- [options]
+
+Options:
+    --gui                           prepare the simulation for gui
+    --review                        open an already existing waveform result 
+    --init                          prepare the simulation for run
+    --lint                          only perform static code analysis  
+    --clean                         clear existing output directory
+    --generic, -g <name>=<value>    override a testbench generic
+
+Environment:
+    ORBIT_ENV_MODELSIM_PATH     path to invoke msim binaries (vcom, vsim, ...)
+
+Dependencies:
+    ModelSim ALTERA STARTER EDITION (tested: 10.5b 2016.10 Oct 5 2016)
+    Python (tested: 3.9.7)
+"""
+
 
 [[plugin]]
 alias   = "viv-no-xpr"
