@@ -1,6 +1,6 @@
 # `orbit-profile`
 
-### A collection of configurations, plugins, and templates for integration with Orbit.
+### A collection of configurations, plugins, and templates for integration with [Orbit](https://github.com/c-rus/orbit).
   
 ## Installing
 
