@@ -93,8 +93,10 @@ program a connected device with an already existing bitfile named after the
 toplevel $ORBIT_TOP. Otherwise, to generate a fresh bitfile and then program the
 device, also supply the '--bit' option.
 
-If '--synth' is supplied, then '--part <num>' must be specified as well because
-there is no set default part number.
+If '--synth' or a toolchain process is supplied, then '--part <num>' must be 
+specified as well because there is no set default part number. Top-level 
+generics can be overridden during synthesis by using the '--generic' option.
+Unknown generics are ignored by the synthesis tool.
 
 Assumes Vivado is already added to the PATH environment variable.
 
@@ -102,18 +104,19 @@ Usage:
     orbit build --plugin viv-no-xpr -- [options]
 
 Options:
-    --part <num>    xilinx device identifier
-    --synth         analysis & synthesis
-    --impl          implementation & optimization
-    --route         route design
-    --bit           generate a bitstream
-    --pgm           program a connected FPGA device
-    --clean         remove all files already in output directory
+    --part <num>                    specify target xilinx device 
+    --synth                         analyze & synthesize
+    --impl                          implementation & optimization
+    --route                         route design
+    --bit                           generate a bitstream
+    --pgm                           program a connected FPGA device
+    --clean                         clear existing output directory
+-g, --generic <name>=<value>...     override top-level generics/parameters
 
 Dependencies:
-    Vivado (tested: 2019.2 (64-bit))
+    Vivado (tested: 2019.2)
 
 Examples:
-    orbit build --plugin viv-no-xpr -- --clean --synth
-    orbit build --plugin viv-no-xpr -- --bit --pgm
+    orbit build --plugin viv-no-xpr -- --clean --synth --part xc7z010
+    orbit build --plugin viv-no-xpr -- --bit --pgm --part xc7z020
 """

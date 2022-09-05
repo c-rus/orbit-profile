@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Script   : viv-no-xpr.tcl
 # Author   : Chase Ruskin
-# Modified : 2022-09-04
+# Modified : 2022-09-05
 # Created  : 2022-09-04
 # Details  :
 #   Complete toolchain for Vivado in non-project mode.
@@ -16,12 +16,11 @@ config_webtalk -user "off"
 # --- Constants ----------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
-set SYNTH_FLOW 1
-set IMPL_FLOW  2
-set ROUTE_FLOW 3
-set BIT_FLOW   4
-
 set DEFAULT_FLOW 0
+set SYNTH_FLOW   1
+set IMPL_FLOW    2
+set ROUTE_FLOW   3
+set BIT_FLOW     4
 
 set ON  1
 set OFF 0
@@ -32,33 +31,38 @@ set OK_CODE  0
 # --- Procedures ---------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
-proc program_device {bit_file} {
+proc program_device { bit_file } {
     # connect to the digilent cable on localhost
     open_hw_manager
     connect_hw_server -allow_non_jtag
     open_hw_target
 
     # find the Xilinx FPGA device connected to the local machine
-    set DEVICE [lindex [get_hw_devices "xc*"] 0]
-    puts "INFO: Detected device $DEVICE ..."
-    current_hw_device $DEVICE
-    refresh_hw_device -update_hw_probes false $DEVICE
-    set_property PROBES.FILE {} $DEVICE
-    set_property FULL_PROBES.FILE {} $DEVICE
-    set_property PROGRAM.FILE $bit_file $DEVICE
+    set device [lindex [get_hw_devices "xc*"] 0]
+    puts "INFO: Detected device $device ..."
+    current_hw_device $device
+    refresh_hw_device -update_hw_probes false $device
+    set_property PROBES.FILE {} $device
+    set_property FULL_PROBES.FILE {} $device
+    set_property PROGRAM.FILE $bit_file $device
     # program and refresh the fpga device
-    program_hw_devices $DEVICE
-    refresh_hw_device $DEVICE 
+    program_hw_devices $device
+    refresh_hw_device $device 
 }
 
 # --- Handle command-line inputs -----------------------------------------------
 # ------------------------------------------------------------------------------
 
-# values set by command-line
+# target xilinx device
 set PART ""
+# toolchain stages to perform
 set FLOW $DEFAULT_FLOW
+# flag to remove or keep existing output directory 
 set CLEAN $OFF
+# flag to program a connected device with a bitfile
 set PROGRAM_BOARD $OFF
+# list of top-level generics to override during synthesis
+set generics {}
 
 set prev_arg ""
 for {set i 0 } { $i < $argc } { incr i } {
@@ -86,10 +90,23 @@ for {set i 0 } { $i < $argc } { incr i } {
             set PROGRAM_BOARD $ON
         }
         default {
-           # check for optional values 
+            # check for optional values 
             switch $prev_arg {
                 "--part" {
                     set PART $cur_arg
+                }
+                "-g" -
+                "--generic" {
+                    # take the value assigned after the '=' sign from command-line
+                    incr i
+                    # verify still within argument array bounds
+                    if { $i >= $argc } {
+                        puts "ERROR: Expecting <value> for $cur_arg with '$prev_arg' option"
+                        exit $ERR_CODE
+                    }
+                    set value [lindex $argv $i]
+                    # add to list of generics to later pass to synthesis stage
+                    lappend generics "-generic" "$cur_arg=$value"
                 }
             }
         }
@@ -174,7 +191,7 @@ foreach rule [split $blueprint_data "\n"] {
 
 # 1. run synthesis
 if { $FLOW >= $DEFAULT_FLOW } {
-    synth_design -top $env(ORBIT_TOP) -part $PART
+    synth_design -top $env(ORBIT_TOP) -part $PART {*}$generics
     write_checkpoint -force "post_synth.dcp"
     report_timing_summary -file "post_synth_timing_summary.rpt"
     report_utilization -file "post_synth_util.rpt"
