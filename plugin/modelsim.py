@@ -4,27 +4,11 @@
 # Modified : 2022-09-05
 # Created  : 2021-08-29
 # Details  :
-#   Backend script using modelsim with Orbit blueprint file.
-# Default:
-#   Use batch mode to run simulation in modelsim.
+#   Use batch mode to run simulation in ModelSim.
 #
-#   Will recognize @DO-FILE labels to collect .do data to prepend to the created
-#   .do file for simulation.
-#
-# Options:
-#   -gui           : run modelsim in gui mode
-#   -setup         : only prepare the simulation (useful for gui mode for manual stepping)
-#   -view          : open the waveform if its already been ran
-#   -g <GEN>=<VAL> : override the generic with the value on command-line
-#   -timing        : use .VHO and .SDO files from quartus to run a timing simulation
-#   -inst=<name>   : explicitly define the instance name of UUT in testbench to apply
-#                    a standard delay format during a timing simulation (is auto-found)
-#   -h, -help      : display help prompt and exit
-#     
 # To unleash full capability, visit the modelsim reference guide: 
 # https://www.microsemi.com/document-portal/doc_view/131617-modelsim-reference-manual
 # ------------------------------------------------------------------------------
-
 import os,sys,shutil
 from typing import List
 
@@ -39,15 +23,10 @@ MODELSIM_PATH = os.environ.get("ORBIT_ENV_MODELSIM_PATH")
 if(MODELSIM_PATH != None and os.path.exists(MODELSIM_PATH) == True and MODELSIM_PATH not in os.getenv('PATH')):
     os.environ['PATH'] = MODELSIM_PATH + ';' + os.getenv('PATH')
 
+DO_FILE = 'orbit.do'
+WAVEFORM_FILE = 'vsim.wlf'
+
 # --- classes and functions ----------------------------------------------------
-
-class Vhdl:
-    def __init__(self, lib: str, path: str):
-        self.lib = lib
-        self.path = path
-        pass
-    pass
-
 
 class Generic:
     def __init__(self, key: str, val: str):
@@ -92,8 +71,6 @@ def invoke(command: str, args: List[str], verbose: bool=False, exit_on_err: bool
     if(rc != 0 and exit_on_err == True):
         exit('ERROR: plugin exited with error code: '+str(rc))
 
-do_file = 'orbit.do'
-waveform_file = 'vsim.wlf'
 
 # --- Handle command-line arguments --------------------------------------------
 
@@ -129,8 +106,8 @@ for cur_arg in sys.argv[1:]:
 
 # open an existing waveform result
 if REVIEW == True:
-    if os.path.exists(waveform_file) == True:
-        invoke('vsim', ['-view', waveform_file, '-do "add wave *;"'])
+    if os.path.exists(WAVEFORM_FILE) == True:
+        invoke('vsim', ['-view', WAVEFORM_FILE, '-do "add wave *;"'])
     else:
         exit("ERROR: No .wlf exists to review")
 
@@ -143,7 +120,7 @@ os.chdir(os.getenv("ORBIT_BUILD_DIR"))
 libraries = []
 
 py_model = None
-add_do_file = None
+tb_do_file = None
 # open the blueprint file
 with open(os.getenv("ORBIT_BLUEPRINT"), 'r') as blueprint:
     # force remove directory if clean is enabled
@@ -182,7 +159,7 @@ with open(os.getenv("ORBIT_BLUEPRINT"), 'r') as blueprint:
             pass
         #see if there is a do file to run for opening modelsim
         elif(fileset == "DO-FILE"):
-            add_do_file = path
+            tb_do_file = path
             pass
     pass
 
@@ -206,12 +183,12 @@ if py_model != None:
 
 # 2. create a .do file to automate modelsim actions
 print("INFO: Generating .do file ...")
-with open(do_file, 'w') as file:
+with open(DO_FILE, 'w') as file:
     # prepend .do file data
     if OPEN_GUI == True:
         # add custom waveform/vsim commands
-        if(add_do_file != None):
-            with open(add_do_file, 'r') as do:
+        if(tb_do_file != None):
+            with open(tb_do_file, 'r') as do:
                 for line in do.readlines():
                     # add all non-blank lines
                     if(len(line.strip())):
@@ -240,4 +217,4 @@ for i in range(len(generics)):
 
 # 3. run vsim
 print("INFO: Invoking modelsim ...")
-invoke('vsim', [mode, '-onfinish', 'stop', '-do', do_file, '-wlf', waveform_file, BENCH] + generics)
+invoke('vsim', [mode, '-onfinish', 'stop', '-do', DO_FILE, '-wlf', WAVEFORM_FILE, BENCH] + generics)
