@@ -23,3 +23,33 @@ Receive the latest changes:
 ```
 git -C "$(orbit env ORBIT_HOME)/profile/c-rus" pull
 ```
+
+## Viewing
+
+### Plugins
+
+To view available plugins:
+
+```
+orbit plan --list
+```
+
+To view details about a plugin:
+
+```
+orbit plan --plugin <alias> --list
+```
+
+### Templates
+
+To view available templates:
+
+```
+orbit new --list
+```
+
+To view available files for importing from a template:
+
+```
+orbit new --template <alias> --list
+```
