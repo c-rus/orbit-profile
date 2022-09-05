@@ -26,9 +26,9 @@ Usage:
 Options:
     --synth         perform analysis and elaboration
     --route         fit the design to the board and assign pins
-    --bitstream     generate a bitstream file for programming to FPGA
+    --bit           generate a bitstream file for programming to FPGA
     --sta           run a static timing analysis
-    --eda-netlist   use MAXII device for .SDO and .VHO files in timing sim
+    --eda-netlist   use MAXII device for .sdo and .vho files in timing sim
     --compile       run through entire flow
     --open          create the project and open it in quartus GUI
     --pgm-soft      upload .sof file to connected FPGA (SRAM Object Files)
@@ -39,8 +39,8 @@ Environment:
     ORBIT_ENV_QUARTUS_PATH    filesystem path to Quartus binaries
 
 Dependencies:
+    Intel Quartus Prime Lite (tested: 19.1)
     Python (tested: 3.8.6)
-    Intel Quartus Prime (tested: 19.1)
 """
 
 

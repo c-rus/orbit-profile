@@ -8,55 +8,60 @@
 #
 #   Quartus TCL Reference Guide:
 #   https://www.intel.co.jp/content/dam/altera-www/global/ja_JP/pdfs/literature/an/an312.pdf
+#
+# Todo:
+#   - [ ] override top-level generics 
+#   https://community.intel.com/t5/Intel-Quartus-Prime-Software/Passing-parameter-generic-to-the-top-level-in-Quartus-tcl/td-p/239039
 # ------------------------------------------------------------------------------
 import os,sys,subprocess
+from typing import List
 
-# === Define constants, important variables, helper methods ====================
-#   Identify any variables necessary for this script to work. Some examples
-#   include tool path, device name, project name, device family name. 
-# ==============================================================================
+# --- Constants ----------------------------------------------------------------
 
 # read environment variable from orbit config.toml
 QUARTUS_PATH = os.environ.get("ORBIT_ENV_QUARTUS_PATH")
-
 # temporarily appends quartus installation path to PATH env variable
 if(QUARTUS_PATH != None and os.path.exists(QUARTUS_PATH) and QUARTUS_PATH not in os.getenv('PATH')):
-    os.environ['PATH'] = os.getenv('PATH') + ';' + QUARTUS_PATH
+    os.environ['PATH'] = QUARTUS_PATH + ';' + os.getenv('PATH')
 
-
-def execute(*code, subproc=False):
-    '''Prints the space-separated command and runs it as a subprocess.'''
-    code_line = ''
-    for c in code:
-        code_line = code_line + c + ' '
-    print(code_line)
-    if(subproc):
-        rc = subprocess.Popen(code_line.split()).returncode
-    else:
-        rc = os.system(code_line)
-    # immediately stop script upon a bad return code
-    if(rc):
-        exit('error: command exited with code: '+str(rc))
-    pass
-
-
-# device selected here is the DE10-Lite FPGA (overridden)
+# device selected here is read from .board file
 FAMILY = None
 DEVICE = None
 
-# the quartus project will reside in a folder the same name as this block's folder
-PROJECT = os.path.basename(os.getcwd())
+# the quartus project will reside in a folder the same name as the IP
+PROJECT = os.path.basename(os.environ.get("ORBIT_IP_NAME"))
 
 # the script that is made within this file and then executed by quartus
-TCL_SCRIPT = "project.tcl"
+TCL_SCRIPT = "orbit.tcl"
 
 # will be overridden when programming to board with auto-detection by quartus
 CABLE = "USB-Blaster"
 
-# === Handle command-line arguments ============================================
-#   Create custom command-line arguments to handle specific workflows and common
-#   usage cases.
-# ==============================================================================
+# --- Classes and Functions ----------------------------------------------------
+
+def quote_str(s: str) -> str:
+    '''Wraps the string `s` around double quotes `\"` characters.'''
+    return '\"' + s + '\"'
+
+
+def invoke(command: str, args: List[str], verbose: bool=False, exit_on_err: bool=True):
+    '''
+    Runs a subprocess calling `command` with a series of `args`.
+
+    Prints the command if `verbose` is `True`.
+    '''
+    code_line = command + ' '
+    for c in args:
+        code_line = code_line + quote_str(c) + ' '
+    rc = os.system(code_line)
+    if verbose == True:
+        print(code_line)
+    #immediately stop script upon a bad return code
+    if(rc != 0 and exit_on_err == True):
+        exit('ERROR: plugin exited with error code: '+str(rc))
+
+
+# --- Handle command-line arguments --------------------------------------------
 
 # skip over the first argument (this script's filepath)
 args = sys.argv[1:]
@@ -84,7 +89,7 @@ else:
     if(args.count('--route')):
         synth = impl = True
     # run up through assembly
-    if(args.count('--bitstream')):
+    if(args.count('--bit')):
         synth = impl = asm = True
     # run up through static timing analysis
     if(args.count('--sta')):
@@ -97,12 +102,7 @@ else:
         FAMILY = "MAXII"
         DEVICE = "EPM2210F324I5"
 
-# === Collect data from the blueprint file =====================================
-#   This part will gather the necessary data we want for our workflow so that
-#   we can act accordingly on that data to get the ouptut we want.
-# ==============================================================================
-
-# --- verify the planning phase was previously ran -----------------------------
+# --- Verify the planning phase and setup --------------------------------------
 
 # verify the build directory exists
 BUILD_DIR = os.environ.get("ORBIT_BUILD_DIR")
@@ -116,7 +116,7 @@ BLUEPRINT = os.environ.get("ORBIT_BLUEPRINT")
 if os.path.exists(BLUEPRINT) == False:
     exit("blueprint file does not exist in build directory '"+BUILD_DIR+"'")
 
-# --- collect data from the blueprint ------------------------------------------
+# --- Collect data from the blueprint ------------------------------------------
 
 # list of (lib, path)
 vhdl_files = []
@@ -129,7 +129,7 @@ pin_assignments = []
 # open the blueprint file
 with open(BLUEPRINT, 'r') as blueprint:
     for rule in blueprint.readlines():
-        fileset, name, path = rule.strip().split('\t')
+        fileset, name, path = rule.strip('\n').split('\t', maxsplit=3)
         # add VHDL source files
         if fileset == "VHDL-RTL":
             vhdl_files.append((name, path))
@@ -186,24 +186,21 @@ with open(BLUEPRINT, 'r') as blueprint:
                     pass
                 pass
             pass
-    blueprint.close()
     pass
 
 top_unit = os.environ.get("ORBIT_TOP")
 
+if top_unit == None:
+    exit("ERROR: No top-level set in $ORBIT_TOP")
+
 if FAMILY == None:
-    exit("error: FPGA 'FAMILY' must be specified in .board file")
+    exit("ERROR: FPGA 'FAMILY' must be specified in .board file")
 if DEVICE == None:
-    exit("error: FPGA 'DEVICE' must be specified in .board file")
+    exit("ERROR: FPGA 'DEVICE' must be specified in .board file")
 
-# === Act on the collected data ================================================
-#   Now that we have the 'ingredients', write some logic to call your tool
-#   based on the data we collected. One example could be to use the collected
-#   data to write a TCL script, and then call your EDA tool to use that TCL
-#   script.
-# ==============================================================================
+# --- Process data -------------------------------------------------------------
 
-# ---[1] Write TCL file for quartus project
+# 1. write TCL file for quartus project
 
 # generate the required tcl text for adding source files (vhdl, verilog, bdf)
 tcl_src_files = ""
@@ -232,27 +229,26 @@ if(flow != None):
 
 # contents of the tcl script
 tcl_contents = """load_package flow
-# Create the project and overwrite any settings
-# files that exist
+# create the project and overwrite any settings or files that exist
 project_new """ + PROJECT + """ -revision """ + PROJECT + """ -overwrite
-# Set the device
+# set default configurations and device
 set_global_assignment -name VHDL_INPUT_VERSION VHDL_1993
 set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VHDL" -section_id EDA_SIMULATION
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id EDA_SIMULATION
 set_global_assignment -name FAMILY """ + FAMILY + """
 set_global_assignment -name DEVICE """ + DEVICE + """
-# Use single uncompressed image with memory initialization file
+# use single uncompressed image with memory initialization file
 set_global_assignment -name EXTERNAL_FLASH_FALLBACK_ADDRESS 00000000
 set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
 set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE IMAGE WITH ERAM" 
-# Tri-state unused pins     
+# configure tri-state for unused pins     
 set_global_assignment -name RESERVE_ALL_UNUSED_PINS_WEAK_PULLUP "AS INPUT TRI-STATED"
-# Add source code files to the project
+# add source code files to the project
 """ + tcl_src_files + """
-# Set the top level entity
+# set the top level entity
 """ + tcl_top_level + """
-# Add pin assignments
+# add pin assignments
 """ + tcl_pin_assigments + """
 # execute a flow
 """ + tcl_flow + """
@@ -268,59 +264,61 @@ os.chdir(PROJECT)
 with open(TCL_SCRIPT, 'w') as f:
     f.write(tcl_contents)
 
-# ---[2] Run quartus with TCL script
+# 2. run quartus with TCL script
 
-# execute quartus using the written tcl script
-execute('quartus_sh','-t', TCL_SCRIPT)
+# execute quartus using the generated tcl script
+invoke('quartus_sh', ['-t', TCL_SCRIPT])
 
-# ---[3] Perform a specified toolflow
+# 3. perform a specified toolflow
 
 # synthesize design
 if(synth):
-    execute("quartus_map", PROJECT)
+    invoke("quartus_map", [PROJECT])
 # route design to board
 if(impl):
-    execute("quartus_fit", PROJECT)
+    invoke("quartus_fit", [PROJECT])
 # generate bitstream
 if(asm):
-     execute("quartus_asm", PROJECT)
+     invoke("quartus_asm", [PROJECT])
 # perform static timing analysis
 if(sta):
-    execute("quartus_sta", PROJECT)
+    invoke("quartus_sta", [PROJECT])
 # generate necessary files for timing simulation
 if(eda_netlist):
-    execute('quartus_eda', PROJECT, '--simulation')
+    invoke('quartus_eda', [PROJECT, '--simulation'])
 
-# ---[4] Program the FPGA board
+# 4. program the FPGA board
 
 # auto-detect the FPGA programming cable
-if(pgm_temporary or pgm_permanent):
-    output = subprocess.Popen(['quartus_pgm','-a'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+if pgm_temporary == True or pgm_permanent == True:
+    output = subprocess.Popen(['quartus_pgm', '-a'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, err = output.communicate()
     if(out != None):
         out = out.decode('utf-8')
-        print(out,end='')
+        print(out, end='')
         if(out.startswith('Error ')):
             exit(1)
         tokens = out.split()
         # grab the second token (cable name)
         CABLE = tokens[1]
+    pass
 
+prog_args = ['-c', CABLE, '-m', 'jtag', '-o']
 # program the FPGA board with temporary SRAM file
-if(pgm_temporary):
-    if(os.path.exists(PROJECT+'.sof')):
-        execute('quartus_pgm','-c',CABLE,'-m','jtag','-o','p'+';'+PROJECT+'.sof')
+if pgm_temporary == True:
+    if os.path.exists(PROJECT+'.sof') == True:
+        invoke('quartus_pgm', prog_args + ['p'+';'+PROJECT+'.sof'])
     else:
-        exit('error: bit stream not found')
+        exit('ERROR: Bitstream .sof file not found')
 # program the FPGA board with permanent program file
-elif(pgm_permanent):
-    if(os.path.exists(PROJECT+'.pof')):
-        execute('quartus_pgm','-c',CABLE,'-m','jtag','-o','bpv'+';'+PROJECT+'.pof')
+elif pgm_permanent == True:
+    if os.path.exists(PROJECT+'.pof') == True:
+        invoke('quartus_pgm', prog_args + ['bpv'+';'+PROJECT+'.pof'])
     else:
-        exit('error: bitstream not found')
+        exit('ERROR: Bitstream .pof file not found')
 
-# ---[5] Open the quartus project
+# 5. open the quartus project
 
 # open the project using quartus GUI
 if open_project == True:
-    execute('quartus', PROJECT+'.qpf', subproc=open_project)
+    invoke('quartus', [PROJECT+'.qpf'])

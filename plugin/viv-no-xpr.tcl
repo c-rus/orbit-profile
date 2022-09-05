@@ -72,16 +72,16 @@ for {set i 0 } { $i < $argc } { incr i } {
     # check for single flags
     switch $cur_arg {
         "--synth" {
-            set FLOW $SYNTH_FLOW
+            if { $FLOW < $SYNTH_FLOW } { set FLOW $SYNTH_FLOW }
         }
         "--impl" {
-            set FLOW $IMPL_FLOW
+            if { $FLOW < $IMPL_FLOW } { set FLOW $IMPL_FLOW }
         }
         "--route" {
-            set FLOW $ROUTE_FLOW
+            if { $FLOW < $ROUTE_FLOW } { set FLOW $ROUTE_FLOW }
         }
         "--bit" {
-            set FLOW $BIT_FLOW
+            if { $FLOW < $BIT_FLOW } { set FLOW $BIT_FLOW }
         }
         "--clean" {
             set CLEAN $ON
