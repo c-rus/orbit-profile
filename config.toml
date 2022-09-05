@@ -88,6 +88,13 @@ and generating bitstream. The default process is to only perform synthesis on
 the targeted top-level. Any process chosen will also execute the processes 
 required before it (synth -> impl -> route -> bit).
 
+If '--pgm' is supplied with no toolchain process, it will attempt to only 
+program a connected device with an already existing bitfile named after the
+toplevel $ORBIT_TOP. Otherwise, to generate a fresh bitfile and then program the
+device, also supply the '--bit' option.
+
+Assumes Vivado is already added to the PATH environment variable.
+
 Usage:
     orbit build --plugin viv-no-xpr -- [options]
 
@@ -96,12 +103,13 @@ Options:
     --impl      implementation & optimization
     --route     route design
     --bit       generate a bitstream
-    --pgm       program the board with a bit file
+    --pgm       program a connected FPGA device
     --clean     remove all files already in output directory
-
-Environment:
-    ORBIT_ENV_VIVADO_PATH       path to invoke vivado binaries
 
 Dependencies:
     Vivado (tested: 2019.2 (64-bit))
+
+Examples:
+    orbit build --plugin viv-no-xpr -- --clean --synth
+    orbit build --plugin viv-no-xpr -- --bit --pgm
 """

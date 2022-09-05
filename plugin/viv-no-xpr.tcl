@@ -11,9 +11,11 @@
 # ------------------------------------------------------------------------------
 
 # try to disable webtalk (may have no affect if using WEBPACK license)
-config_webtalk -user off
+config_webtalk -user "off"
 
-# constants
+# --- Constants ----------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 set SYNTH_FLOW 1
 set IMPL_FLOW  2
 set ROUTE_FLOW 3
@@ -21,9 +23,36 @@ set BIT_FLOW   4
 
 set DEFAULT_FLOW 0
 
-
-set ON 1
+set ON  1
 set OFF 0
+
+set ERR_CODE 1
+set OK_CODE  0
+
+# --- Procedures ---------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+proc program_device {bit_file} {
+    # connect to the digilent cable on localhost
+    open_hw_manager
+    connect_hw_server -allow_non_jtag
+    open_hw_target
+
+    # find the Xilinx FPGA device connected to the local machine
+    set DEVICE [lindex [get_hw_devices "xc*"] 0]
+    puts "INFO: Detected device $DEVICE ..."
+    current_hw_device $DEVICE
+    refresh_hw_device -update_hw_probes false $DEVICE
+    set_property PROBES.FILE {} $DEVICE
+    set_property FULL_PROBES.FILE {} $DEVICE
+    set_property PROGRAM.FILE $bit_file $DEVICE
+    # program and refresh the fpga device
+    program_hw_devices $DEVICE
+    refresh_hw_device $DEVICE 
+}
+
+# --- Handle command-line inputs -----------------------------------------------
+# ------------------------------------------------------------------------------
 
 # values set by command-line
 set PART ""
@@ -31,7 +60,6 @@ set FLOW $DEFAULT_FLOW
 set CLEAN $OFF
 set PROGRAM_BOARD $OFF
 
-# --- handle command-line inputs -----------------------------------------------
 set prev_arg ""
 for {set i 0 } { $i < $argc } { incr i } {
     # set the current argument to handle
@@ -70,10 +98,13 @@ for {set i 0 } { $i < $argc } { incr i } {
     set prev_arg $cur_arg
 }
 
+# --- Initialize setup ---------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 # verify the output directory exists
 if { [file exists $env(ORBIT_BUILD_DIR)] == 0 } {
     puts "ERROR: Orbit build directory does not exist"
-    exit 1
+    exit $ERR_CODE
 }
 # enter the build directory
 cd $env(ORBIT_BUILD_DIR)
@@ -81,8 +112,16 @@ cd $env(ORBIT_BUILD_DIR)
 # verify the blueprint exists
 if { [file exists $env(ORBIT_BLUEPRINT)] == 0 } {
     puts "ERROR: Orbit blueprint file does not exist in current build directory"
-    exit 1
+    exit $ERR_CODE
 }
+
+# verify a toplevel is set
+if { $env(ORBIT_TOP) == "" } {
+    puts "ERROR: No toplevel set by Orbit through environment variable ORBIT_TOP"
+    exit $ERR_CODE
+}
+# store the target bitfile filename
+set BIT_FILE "$env(ORBIT_TOP).bit"
 
 # create output directory
 set OUTPUT_DIR $env(ORBIT_IP_NAME)
@@ -101,55 +140,39 @@ set blueprint_data [read [open $env(ORBIT_BLUEPRINT) r]]
 # enter the output directory
 cd $OUTPUT_DIR
 
-set BIT_FILE "$env(ORBIT_TOP).bit"
-
-proc program_device {bit_file} {
-   # Connect to the Digilent Cable on localhost:3121
-    open_hw_manager
-    connect_hw_server -allow_non_jtag
-    # connect_hw_server -url localhost:3121
-
-    # current_hw_target [get_hw_targets "*/xilinx_tcf/Digilent/12345"]
-    open_hw_target
-
-    # Program and Refresh the XC7K325T Device
-    set DEVICE [lindex [get_hw_devices] 0]
-    current_hw_device $DEVICE
-    refresh_hw_device -update_hw_probes false $DEVICE
-    set_property PROBES.FILE {} $DEVICE
-    set_property FULL_PROBES.FILE {} $DEVICE
-    set_property PROGRAM.FILE $bit_file $DEVICE
-
-    program_hw_devices $DEVICE
-    refresh_hw_device $DEVICE 
-}
-
-# check if there is a bitstream file and no flow was specified
+# just program device if there is a bitstream file and no flow was specified
 if { $FLOW == $DEFAULT_FLOW && $PROGRAM_BOARD == $ON } {
     program_device $BIT_FILE
-    exit
+    exit $OK_CODE
 }
 
-# --- process data in blueprint ------------------------------------------------
+# --- Process data in blueprint ------------------------------------------------
+# ------------------------------------------------------------------------------
+
 foreach rule [split $blueprint_data "\n"] {
     # break rule into the 3 main components
     lassign [split $rule "\t"] fileset library path
+    # branch to action according to rule's fileset
     switch $fileset {
+        # synthesizable vhdl files
         "VHDL-RTL" {
             read_vhdl -library $library $path
         }
+        # synthesizable verilog files
         "VLOG-RTL" {
             read_verilog -library $library $path
         }
+        # Xilinx design constraints
         "XIL-XDC" {
             read_xdc $path
         }
     }
 }
 
-# --- execute toolchain --------------------------------------------------------
+# --- Execute toolchain --------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-# run synthesis
+# 1. run synthesis
 if { $FLOW >= $DEFAULT_FLOW } {
     synth_design -top $env(ORBIT_TOP) -part $PART
     write_checkpoint -force "post_synth.dcp"
@@ -157,7 +180,7 @@ if { $FLOW >= $DEFAULT_FLOW } {
     report_utilization -file "post_synth_util.rpt"
 }
 
-# run implementation
+# 2. run implementation
 if { $FLOW >= $IMPL_FLOW } {
     opt_design
     place_design
@@ -172,7 +195,7 @@ if { $FLOW >= $IMPL_FLOW } {
     report_timing_summary -file "post_place_timing_summary.rpt"
 }
 
-# route design
+# 3. route design
 if { $FLOW >= $ROUTE_FLOW } {
     route_design -directive Explore
     write_checkpoint -force "post_route.dcp"
@@ -182,10 +205,15 @@ if { $FLOW >= $ROUTE_FLOW } {
     report_drc -file "post_imp_drc.rpt"
 }
 
-# generate bitstream
+# 4. generate bitstream
 if { $FLOW >= $BIT_FLOW } {
     write_verilog -force "cpu_impl_netlist_$env(ORBIT_TOP).v" -mode timesim -sdf_anno true
-    write_bitstream -force "$env(ORBIT_TOP).bit"
+    write_bitstream -force $BIT_FILE
+
+    # 4a. program to the connected device
+    if { $PROGRAM_BOARD == $ON } {
+        program_device $BIT_FILE
+    }
 }
 
-exit
+exit 0

@@ -4,9 +4,8 @@
 ## - uncomment the lines corresponding to used pins
 ## - rename the used ports (in each line, after get_ports) according to the top level signal names in the project
 ## Part Numbers:
-## - Zybo Z7-20 = XC7Z020-1CLG400
-## - Zybo ZY-10 = XC7Z010-1CLG400
-
+## - Zybo Z7-20 = xc7z020-1clg400
+## - Zybo ZY-10 = xc7z010-1clg400
 
 ## Clock signal
 #set_property -dict { PACKAGE_PIN K17   IOSTANDARD LVCMOS33 } [get_ports { sysclk }]; #IO_L12P_T1_MRCC_35 Sch=sysclk

@@ -28,7 +28,7 @@
 #                      Copyright(c) 2012 Avnet, Inc.
 #                              All rights reserved.
 #   Part:
-#     XC7Z020-1CLG484
+#     xc7z020-1clg484
 # ----------------------------------------------------------------------------
 # 
 #  Notes:
