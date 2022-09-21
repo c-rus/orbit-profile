@@ -154,3 +154,23 @@ Examples:
     orbit build --plugin viv-no-xpr -- --clean --synth --part xc7z010
     orbit build --plugin viv-no-xpr -- --bit --pgm --part xc7z020
 """
+
+[[plugin]]
+alias = "viv-xpr"
+summary = "Backend Vivado project mode toolflow"
+command = "vivado"
+args = ["-mode", "batch", "-nojournal", "-nolog", "-source", "./plugin/viv-xpr.tcl", "-tclargs"]
+fileset.xil-xdc = "*.xdc"
+details = """
+By default, creates a Vivado project and opens it in the Vivado GUI.
+
+Usage:
+    orbit build --plugin viv-xpr -- [options]
+
+Options:
+    --part <num>                specify target xilinx device
+    --clean                     clear existing output directory
+
+Dependencies:
+    Vivado (tested: 2019.2)
+"""
