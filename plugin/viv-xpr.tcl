@@ -93,8 +93,21 @@ set blueprint_data [read [open $env(ORBIT_BLUEPRINT) r]]
 # enter the output directory
 cd $OUTPUT_DIR
 
-# create the project
-create_project -part $PART $env(ORBIT_IP_NAME) "."
+# check if existing project exists
+if { [file exists "$env(ORBIT_IP_NAME).xpr"] != 0 && $CLEAN == $OFF } {
+    # open existing project
+    open_project "$env(ORBIT_IP_NAME).xpr"
+} else {
+    # check if part was supplied by user
+    if { $PART == "" } {
+        puts "WARNING: Using default Xilinx part because --part <num> was not set"
+        # create the project
+        create_project $env(ORBIT_IP_NAME) "."
+    } else {
+        # create the project with specified part
+        create_project -part $PART $env(ORBIT_IP_NAME) "."
+    }
+}
 
 # set target language
 set_property target_language "VHDL" [current_project]
@@ -124,6 +137,14 @@ foreach rule [split $blueprint_data "\n"] {
         # xilinx design constraints
         "XIL-XDC" {
             add_files -fileset constrs_1 $path
+        }
+        # python software model
+        "PY-MODEL" {
+            # run python software model (ignore python environment variables set by Vivado)
+            exec "python" "-E" $path
+            # take generated files ending in .dat and import them into simulation fileset
+            set data_files [glob "*.dat"]
+            import_files -fileset sim_1 $data_files
         }
     }
 }
