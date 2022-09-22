@@ -179,3 +179,28 @@ Options:
 Dependencies:
     Vivado (tested: 2019.2)
 """
+
+[[plugin]]
+alias = "zipr"
+summary = "Compress files into a submission-like format"
+command = "python"
+args = ["./plugin/zipr.py"]
+fileset.zip-list = "submission.txt"
+details = """
+By default, collects files listed in ZIP-LIST file and zips them into a
+compressed file, preserving relative paths to the current ip.
+
+The file format for ZIP-LIST consists of a relative path on its own line to
+search for. Lines beginning with semicolons ';' and empty lines are ignored.
+
+Usage:
+    orbit build --plugin zipr -- [options]
+
+Options:
+    --output, -o            compressed output filename
+    --flat                  flatten the directory tree to include no folders
+    --force                 compress files regardless of missing finds
+
+Dependencies:
+    Python (tested: 3.9.7)
+"""
