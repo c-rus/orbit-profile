@@ -111,6 +111,12 @@ if { [file exists "$env(ORBIT_IP_NAME).xpr"] != 0 && $CLEAN == $OFF } {
 
 # set target language
 set_property target_language "VHDL" [current_project]
+# set simulation language
+set_property simulator_language "VHDL" [current_project]
+# set new part if overwritten
+if { $PART != "" } {
+    set_property part $PART [current_project]
+}
 
 # --- Process data in blueprint ------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -144,7 +150,7 @@ foreach rule [split $blueprint_data "\n"] {
             exec "python" "-E" $path
             # take generated files ending in .dat and import them into simulation fileset
             set data_files [glob "*.dat"]
-            import_files -fileset sim_1 $data_files
+            import_files -fileset sim_1 -force $data_files
         }
     }
 }
