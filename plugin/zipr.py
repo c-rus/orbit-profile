@@ -183,7 +183,7 @@ with ZipFile(OUTPUT_FILE, 'w') as zip:
         if args.flat == True:
             arcname = os.path.basename(f)
         else:
-            basepath = os.path.commonprefix((f, normalize(os.getcwd())))
+            basepath = os.path.commonprefix((f, normalize(os.getenv("ORBIT_IP_PATH"))))
             arcname = arcname.removeprefix(basepath)
             pass
         zip.write(f, arcname)

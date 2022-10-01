@@ -77,6 +77,9 @@ def invoke(command: str, args: List[str], verbose: bool=False, exit_on_err: bool
 generics = []
 prev_arg = ''
 
+# testbench's VHDL configuration unit
+top_level_config = None
+
 REVIEW = False
 OPEN_GUI = False
 INIT_ONLY = False
@@ -100,6 +103,9 @@ for cur_arg in sys.argv[1:]:
             generics += [gen]
         else:
             exit('ERROR: Invalid generic entered as ' + cur_arg)
+        pass
+    elif prev_arg == '--config':
+        top_level_config = cur_arg
         pass
     prev_arg = cur_arg
     pass
@@ -214,6 +220,10 @@ if OPEN_GUI == True:
 # format any generics for vsim command-line
 for i in range(len(generics)):
     generics[i] = '-g'+generics[i]
+
+# override bench with top-level config
+if top_level_config != None:
+    BENCH = top_level_config
 
 # 3. run vsim
 print("INFO: Invoking modelsim ...")

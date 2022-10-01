@@ -100,6 +100,7 @@ Options:
     --lint                          only perform static code analysis  
     --clean                         clear existing output directory
     --generic, -g <name>=<value>    override a testbench generic
+    --config <iden>                 specify top-level VHDL configuration
 
 Environment:
     ORBIT_ENV_MODELSIM_PATH     path to invoke msim binaries (vcom, vsim, ...)
