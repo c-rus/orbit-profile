@@ -25,8 +25,8 @@ architecture sim of {{ orbit.filename }} is
     --! internal testbench signals
     signal clk: std_logic := '0';
     signal rst: std_logic := '0';
-    -- the simulation will halt when `done` becomes '1'
-    signal done: std_logic := '0';
+    -- the simulation will stop when `halt` becomes '1'
+    signal halt: std_logic := '0';
 
     constant period: time := 10ns;
 begin
@@ -34,7 +34,7 @@ begin
     -- @todo: instantiate entity
 
     --! generate clock with 50% duty cycle
-    clk <= not clk after period/2 when done = '0';
+    clk <= not clk after period/2 when halt = '0';
 
     --! initial reset to start from known state
     boot: process
@@ -80,7 +80,7 @@ begin
             -- @todo
 
         end loop;
-        done <= '1';
+        halt <= '1';
         wait;
     end process;
 
