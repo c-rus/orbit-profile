@@ -9,6 +9,9 @@
 --------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
+-- @note: uncomment the next 2 lines to use the toolbox package.
+-- library util;
+-- use util.toolbox.all;
 
 entity {{ orbit.filename }} is 
     -- @todo: define generic interface (if applicable)
@@ -20,15 +23,34 @@ architecture sim of {{ orbit.filename }} is
     -- @todo: define wires
 
     --! internal testbench signals
-    constant delay: time := 10ns;
+    constant DELAY: time := 10 ns;
 begin
     --! UUT instantiation
     -- @todo: instantiate entity
 
     --! assert the received outputs match expected model values
     bench: process
+        file inputs: text open read_mode is "inputs.dat";
+        file outputs: text open read_mode is "outputs.dat";
     begin
         -- @todo: drive UUT and check circuit behavior
+        while not endfile(inputs) loop
+            --! read given inputs from file
+
+            -- @note: example syntax for toolbox package
+            -- <signal> <= read_str_to_slv(inputs, <width>);
+
+            wait for DELAY;
+            --! read expected outputs from file
+
+            -- @note: example syntax for toolbox package
+            -- <signal> <= read_str_to_slv(outputs, <width>);
+
+            -- @note: example syntax for toolbox package
+            -- assert <expected> = <receieved> report error_slv("<message>", <expected>, <received>) severity failure;
+        end loop;
+
+        -- halt the simulation
         wait;
     end process;
 

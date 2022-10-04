@@ -9,8 +9,9 @@
 --------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
-library util;
-use util.toolbox.all;
+-- @note: uncomment the next 2 lines to use the toolbox package.
+-- library util;
+-- use util.toolbox.all;
 
 entity {{ orbit.filename }} is 
     -- @todo: define generic interface (if applicable)
@@ -44,34 +45,37 @@ begin
         wait;
     end process;
 
-    --! feed inputs into the UUT to begin processing
-    input: process
+    --! drive inputs into the UUT to begin processing
+    drive: process
         file inputs: text open read_mode is "inputs.dat";
     begin
         wait until rst = '0';
 
         while not endfile(inputs) loop
-            -- example syntax
-            -- toolbox.read_str_to_logic_vector(inputs, <signal>);
-            -- @todo
+            -- @note: example syntax for toolbox package
+            -- <signal> <= read_str_to_slv(inputs, <width>);
+
+            -- @todo: write timing control logic
         end loop;
         wait;
     end process;
 
     --! assert the received outputs match expected model values
-    bench: process
+    check: process
         file outputs: text open read_mode is "outputs.dat";
     begin
         wait until rst = '0';
 
         while not endfile(outputs) loop
-            --- example syntax
-            -- toolbox.read_str_to_logic_vector(inputs, <signal-expected>);
+            -- @note: example syntax for toolbox package
+            -- <signal> <= read_str_to_slv(outputs, <width>);
 
             -- wait until a valid signal
 
             -- assert value matches
-            -- assert <signal-expected> = <signal-receieved> report toolbox.report severity failure
+
+            -- @note: example syntax for toolbox package
+            -- assert <expected> = <receieved> report error_slv("<message>", <expected>, <received>) severity failure;
 
             -- @todo
 
