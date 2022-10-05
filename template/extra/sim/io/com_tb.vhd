@@ -47,10 +47,11 @@ begin
             -- <signal> <= read_str_to_slv(outputs, <width>);
 
             -- @note: example syntax for toolbox package
-            -- assert <expected> = <receieved> report error_slv("<message>", <expected>, <received>) severity failure;
+            -- assert <expected> = <received> report error_slv("<message>", <expected>, <received>) severity failure;
         end loop;
 
         -- halt the simulation
+        report "Simulation complete.";
         wait;
     end process;
 

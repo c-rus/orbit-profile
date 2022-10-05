@@ -63,24 +63,23 @@ begin
     --! assert the received outputs match expected model values
     check: process
         file outputs: text open read_mode is "outputs.dat";
+        --! @todo: define variables for checking output ports
     begin
         wait until rst = '0';
 
         while not endfile(outputs) loop
-            -- @note: example syntax for toolbox package
-            -- <signal> <= read_str_to_slv(outputs, <width>);
-
-            -- wait until a valid signal
-
-            -- assert value matches
+            -- @todo: write timing control logic
 
             -- @note: example syntax for toolbox package
-            -- assert <expected> = <receieved> report error_slv("<message>", <expected>, <received>) severity failure;
+            -- <variable> <= read_str_to_slv(outputs, <width>);
 
-            -- @todo
+            -- @note: example syntax for toolbox package
+            -- assert <expected> = <received> report error_slv("<message>", <expected>, <received>) severity failure;
 
         end loop;
+        -- stop the simulation
         halt <= '1';
+        report "Simulation complete.";
         wait;
     end process;
 
