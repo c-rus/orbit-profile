@@ -1,15 +1,28 @@
-from io import TextIOWrapper
-import unittest
-from math import ceil, log
+import io as __io
+import unittest as __ut
+import math as __math
 
 # --- Classes and Functions ----------------------------------------------------
 
 def to_bin(n: int, width: int=None, trunc: bool=True) -> str:
+    '''
+    Converts the integer `n` to a binary string.
+
+    If `n` is negative, the two's complement representation will be returned.
+
+    ### Parameters
+    - `n`: integer number to convert
+    - `width`: specify the number of bits (never truncates) 
+    - `trunc`: trim upper-most bits if width is less than required bit count
+
+    ### Returns
+    - `str` of 1's and 0's
+    '''
     bin_str = bin(n)
     is_negative = bin_str[0] == '-'
     # auto-define a width
     if width == None:
-        width = 1 if n == 0 else ceil(log(abs(n) + 0.5, 2))
+        width = 1 if n == 0 else __math.ceil(__math.log(abs(n) + 0.5, 2))
         # extend to use negative MSB
         if is_negative == True:
             width += 1
@@ -25,17 +38,40 @@ def to_bin(n: int, width: int=None, trunc: bool=True) -> str:
         return bin_str
 
 
-def from_bin(n: str, signed: bool=False) -> int:
-    if signed == True and n[0] == '1':
+def from_bin(b: str, signed: bool=False) -> int:
+    '''
+    Converts the binary string `b` to an integer representation.
+    
+    ### Parameters
+    - `b`: binary string to convert (example: '011101')
+    - `signed`: apply two's complement when MSB = '1' during conversion
+
+    ### Returns
+    - `b` as integer form (decimal)
+    '''
+    if signed == True and b[0] == '1':
         # flip all bits
         flipped = ''
-        for bit in n: flipped += str(int(bit, base=2) ^ 1)
+        for bit in b: flipped += str(int(bit, base=2) ^ 1)
         return (int('0b'+flipped, base=2)+1) * -1
     else:
-        return int('0b'+n, base=2)
+        return int('0b'+b, base=2)
 
 
-def write_bits(file: TextIOWrapper, *args):
+def write_bits(file: __io.TextIOWrapper, *args) -> None:
+    '''
+    Writes binary representations to an opened text file `file`.
+
+    Each value is written on a new line after the preceeding value in the 
+    argument list.
+
+    ### Parameters
+    - `file`: opened writeable text file
+    - `*args`: integers or binary strings to write to file in order given
+
+    ### Returns
+    - None
+    '''
     for a in args:
         # auto-format as binary number
         if type(a) == int:
@@ -47,6 +83,25 @@ def write_bits(file: TextIOWrapper, *args):
 
 
 def get_generics(entity: str=None) -> dict:
+    '''
+    Fetches generics and their (optional) default values from an HDL `entity`.
+    
+    If no `entity` is provided, then it will invoke the `orbit` program to detect
+    the entity to get with the $ORBIT_BENCH environment variable.
+
+    All values returned in the dictionary are left in `str` representation with 
+    no pre-determined casting. It it the programmer's job to determine how to cast
+    the values to the Python programming language.
+
+    Generics set on the command-line override generic values found in the HDL source code
+    file. 
+
+    ### Parameters
+    - `entity`: HDL entity identifier to fetch generic interface
+
+    ### Returns
+    - dictionary of generic identifiers (`str`) as keys and optional values (`str`) as values
+    '''
     import subprocess, os, argparse
     gens = dict()
     BENCH = entity if entity != None else os.environ.get('ORBIT_BENCH')
@@ -132,7 +187,7 @@ def get_generics(entity: str=None) -> dict:
 
 # --- Tests --------------------------------------------------------------------
 
-class Test(unittest.TestCase):
+class __Test(__ut.TestCase):
 
     def test_to_bin(self):
         self.assertEqual('001', to_bin(1, width=3))

@@ -16,6 +16,11 @@ Link the profile's configuration file to your home configuration:
 orbit config --append include="profile/c-rus/config.toml"
 ```
 
+__Optional:__ Install Python helper functions for writing software models for HDL verification:
+```
+pip install -e "$(orbit env ORBIT_HOME)/profile/c-rus/toolbox"
+```
+
 ## Updating
 
 Receive the latest changes:

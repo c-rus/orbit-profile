@@ -11,18 +11,7 @@
 # ------------------------------------------------------------------------------
 
 # @note: uncomment the following lines to use custom python module for testbenches
-# --- BEGIN IMPORT TOOLBOX ---
-# import subprocess, sys
-# # grab the profile's installed path which should be starting from ORBIT_HOME
-# try:
-#     ORBIT_HOME = subprocess.check_output(['orbit', 'env', 'ORBIT_HOME']).decode('utf-8').strip()
-# except:
-#     exit('error: Failed to access Orbit home path')
-# # append to the system path to look for toolbox package
-# sys.path.append(ORBIT_HOME+'/profile/c-rus')
-# # @note: the module is viewable: "$(orbit env ORBIT_HOME)"/profile/c-rus/toolbox
 # from toolbox import toolbox as tb
-# --- END IMPORT TOOLBOX ---
 
 # --- Constants ----------------------------------------------------------------
 
