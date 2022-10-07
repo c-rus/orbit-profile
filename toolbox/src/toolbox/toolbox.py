@@ -148,6 +148,12 @@ def get_generics(entity: str=None) -> dict:
     return gens
 
 
+def interp_vhdl_bool(s: str) -> bool:
+    '''Interprets a string `s` encoded as a vhdl boolean datatype and casts it
+    to a Python `bool`.'''
+    return s.lower() == 'true'
+
+
 # --- Example Logic ------------------------------------------------------------
 
 # example code for replicating logic behavior in software
