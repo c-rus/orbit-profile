@@ -9,9 +9,10 @@
 --------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
--- @note: uncomment the next 2 lines to use the toolbox package.
+-- @note: uncomment the next 3 lines to use the toolbox package.
 -- library util;
--- use util.toolbox.all;
+-- use util.toolbox_pkg.all;
+-- use std.textio.all;
 
 entity {{ orbit.filename }} is 
     -- @todo: define generic interface (if applicable)
@@ -23,15 +24,15 @@ architecture sim of {{ orbit.filename }} is
     -- @todo: define wires
 
     --! internal testbench signals
-    constant DELAY: time := 10 ns;
+    constant DELAY : time := 10 ns;
 begin
     --! UUT instantiation
     -- @todo: instantiate entity
 
     --! assert the received outputs match expected model values
     bench: process
-        file inputs: text open read_mode is "inputs.dat";
-        file outputs: text open read_mode is "outputs.dat";
+        file inputs  : text open read_mode is "inputs.dat";
+        file outputs : text open read_mode is "outputs.dat";
     begin
         -- @todo: drive UUT and check circuit behavior
         while not endfile(inputs) loop

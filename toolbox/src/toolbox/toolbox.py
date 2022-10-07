@@ -137,12 +137,13 @@ def get_generics(entity: str=None) -> dict:
     parser = argparse.ArgumentParser()
     parser.add_argument('-g', '--generic', action='append', nargs='*', type=str)
     args = parser.parse_args()
-    for arg in args.generic:
-        value = None
-        name = arg[0]
-        if arg[0].count('=') > 0:
-            name, value = arg[0].split('=', maxsplit=1)
-        gens[name] = value
+    if args.generic != None:
+        for arg in args.generic:
+            value = None
+            name = arg[0]
+            if arg[0].count('=') > 0:
+                name, value = arg[0].split('=', maxsplit=1)
+            gens[name] = value
 
     return gens
 
