@@ -33,6 +33,7 @@ begin
     bench: process
         file inputs  : text open read_mode is "inputs.dat";
         file outputs : text open read_mode is "outputs.dat";
+        --! @todo: define variables for checking output ports
     begin
         -- @todo: drive UUT and check circuit behavior
         while not endfile(inputs) loop
@@ -45,10 +46,10 @@ begin
             --! read expected outputs from file
 
             -- @note: example syntax for toolbox package
-            -- <signal> <= read_str_to_slv(outputs, <width>);
+            -- <signal> := read_str_to_slv(outputs, <width>);
 
             -- @note: example syntax for toolbox package
-            -- assert <expected> = <received> report error_slv("<message>", <expected>, <received>) severity failure;
+            -- assert <received> = <expected> report error_slv("<message>", <received>, <expected>) severity failure;
         end loop;
 
         -- halt the simulation

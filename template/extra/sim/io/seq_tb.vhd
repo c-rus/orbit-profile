@@ -72,10 +72,10 @@ begin
             -- @todo: write timing control logic
 
             -- @note: example syntax for toolbox package
-            -- <variable> <= read_str_to_slv(outputs, <width>);
+            -- <variable> := read_str_to_slv(outputs, <width>);
 
             -- @note: example syntax for toolbox package
-            -- assert <expected> = <received> report error_slv("<message>", <expected>, <received>) severity failure;
+            -- assert <received> = <expected> report error_slv("<message>", <received>, expected>) severity failure;
 
         end loop;
         -- stop the simulation

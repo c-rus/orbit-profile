@@ -1,6 +1,7 @@
 import io as __io
 import unittest as __ut
 import math as __math
+from typing import List as __List
 
 # --- Classes and Functions ----------------------------------------------------
 
@@ -149,9 +150,20 @@ def get_generics(entity: str=None) -> dict:
 
 
 def interp_vhdl_bool(s: str) -> bool:
-    '''Interprets a string `s` encoded as a vhdl boolean datatype and casts it
-    to a Python `bool`.'''
+    '''
+    Interprets a string `s` encoded as a vhdl boolean datatype and casts it
+    to a Python `bool`.
+    '''
     return s.lower() == 'true'
+
+
+def vec_int_to_str(vec: __List[int]) -> str:
+    '''
+    Casts a list containing `int` to a `str`.
+    '''
+    word = ''
+    for bit in vec: word += str(bit)
+    return word
 
 
 # --- Example Logic ------------------------------------------------------------
@@ -218,4 +230,12 @@ class __Test(__ut.TestCase):
         self.assertEqual(-6, from_bin('1010', signed=True))
         self.assertEqual(5, from_bin('00000101'))
         pass
+
+
+    def test_vec_int_to_str(self):
+        vec = [0, 1, 1, 0]
+        self.assertEqual(vec_int_to_str(vec), '0110')
+
+        vec = [1, 1, 1, 0, 0, 0]
+        self.assertEqual(vec_int_to_str(vec), '111000')
     pass
