@@ -219,7 +219,7 @@ if OPEN_GUI == True:
 
 # format any generics for vsim command-line
 for i in range(len(generics)):
-    generics[i] = '-g'+generics[i]
+    generics[i] = '-g'+generics[i].to_str()
 
 # override bench with top-level config
 if top_level_config != None:

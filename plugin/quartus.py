@@ -15,6 +15,7 @@
 # ------------------------------------------------------------------------------
 import os,sys,subprocess
 from typing import List
+import argparse
 
 # --- Constants ----------------------------------------------------------------
 
@@ -63,39 +64,59 @@ def invoke(command: str, args: List[str], verbose: bool=False, exit_on_err: bool
 
 # --- Handle command-line arguments --------------------------------------------
 
-# skip over the first argument (this script's filepath)
-args = sys.argv[1:]
+generics = {}
+# adding arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--pgm-soft", help="program with temporary bitfile", action="store_true", default=False)
+parser.add_argument("--pgm-hard", help="program with permanent bitfile", action="store_true", default=False)
+parser.add_argument("--open", help="open quartus project in gui", action="store_true", default=False)
+parser.add_argument("--include-sim", help="add simulation files to project", action="store_true", default=False)
+parser.add_argument("--compile", help="full toolflow", action="store_true", default=False)
+parser.add_argument("--synth", help="execute analysize and synthesis", action="store_true", default=False)
+parser.add_argument("--route", help="execute place and route", action="store_true", default=False)
+parser.add_argument("--bit", help="generate bitstream file", action="store_true", default=False)
+parser.add_argument("--sta", help="execute static timing analysis", action="store_true", default=False)
+parser.add_argument("--eda-netlist", help="generate eda timing netlist", action="store_true", default=False)
+parser.add_argument('-g', '--generic', action='append', nargs='*', type=str)
+args = parser.parse_args()
+if args.generic != None:
+    for arg in args.generic:
+        value = None
+        name = arg[0]
+        if arg[0].count('=') > 0:
+            name, value = arg[0].split('=', maxsplit=1)
+        generics[name] = value
 
 # determine if to program the FPGA board
-pgm_temporary = args.count('--pgm-soft')
-pgm_permanent = args.count('--pgm-hard')
+pgm_temporary = args.pgm_soft
+pgm_permanent = args.pgm_hard
 
 # determine if to open the quartus project in GUI
-open_project = args.count('--open')
+open_project = args.open
 
 # don't add simulation files to project
-ignore_sim = args.count('--include-sim') == 0
+ignore_sim = args.include_sim
 
 # default flow is none (won't execute any flow)
 flow = None
 synth = impl = asm = sta = eda_netlist = False
-if(args.count('--compile')):
+if(args.compile):
     flow = '-compile'
 else:
     # run up through synthesis
-    if(args.count('--synth')):
+    if(args.synth):
         synth = True
     # run up through fitting
-    if(args.count('--route')):
+    if(args.route):
         synth = impl = True
     # run up through assembly
-    if(args.count('--bit')):
+    if(args.bit):
         synth = impl = asm = True
     # run up through static timing analysis
-    if(args.count('--sta')):
+    if(args.sta):
         synth = impl = asm = sta = True
     # run up through generating eda timing netlist
-    if(args.count('--eda-netlist')):
+    if(args.eda_netlist):
         synth = impl = asm = sta = eda_netlist = True
     # use a supported device to generate .SDO and .VHO files for timing simulation
     if(eda_netlist):
@@ -223,6 +244,12 @@ tcl_top_level = ""
 if(top_unit != None):
     tcl_top_level = "set_global_assignment -name TOP_LEVEL_ENTITY "+top_unit+"\n"
 
+# set top-level generics
+tcl_top_generics = ""
+for (key, val) in generics.items():
+    tcl_top_generics = tcl_top_generics+"set_parameter -name "+key+" "+str(val)+"\n"
+
+
 tcl_flow = ""
 if(flow != None):
     tcl_flow = "execute_flow "+flow
@@ -248,6 +275,8 @@ set_global_assignment -name RESERVE_ALL_UNUSED_PINS_WEAK_PULLUP "AS INPUT TRI-ST
 """ + tcl_src_files + """
 # set the top level entity
 """ + tcl_top_level + """
+# set generics for top level entity
+""" + tcl_top_generics + """
 # add pin assignments
 """ + tcl_pin_assigments + """
 # execute a flow
