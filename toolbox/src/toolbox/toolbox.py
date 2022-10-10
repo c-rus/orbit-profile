@@ -157,12 +157,16 @@ def interp_vhdl_bool(s: str) -> bool:
     return s.lower() == 'true'
 
 
-def vec_int_to_str(vec: __List[int]) -> str:
+def vec_int_to_str(vec: __List[int], big_endian=True) -> str:
     '''
-    Casts a list containing `int` to a `str`.
+    Casts a list containing `int` to a `str` as big-endian.
+
+    Big-endianness will assume the vec[0] is the LSB.
     '''
     word = ''
     for bit in vec: word += str(bit)
+    if big_endian == True:
+        word = word[::-1]
     return word
 
 
@@ -237,5 +241,8 @@ class __Test(__ut.TestCase):
         self.assertEqual(vec_int_to_str(vec), '0110')
 
         vec = [1, 1, 1, 0, 0, 0]
-        self.assertEqual(vec_int_to_str(vec), '111000')
+        self.assertEqual(vec_int_to_str(vec), '000111')
+
+        vec = [1, 1, 1, 0, 0, 0]
+        self.assertEqual(vec_int_to_str(vec, False), '111000')
     pass
