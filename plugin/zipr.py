@@ -184,7 +184,7 @@ with ZipFile(OUTPUT_FILE, 'w') as zip:
             arcname = os.path.basename(f)
         else:
             basepath = os.path.commonprefix((f, normalize(os.getenv("ORBIT_IP_PATH"))))
-            arcname = arcname.removeprefix(basepath)
+            arcname = arcname.replace(basepath, '')
             pass
         zip.write(f, arcname)
         pass
