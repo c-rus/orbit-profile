@@ -67,7 +67,7 @@ def invoke(command: str, args: List[str], verbose: bool=False, exit_on_err: bool
     rc = os.system(code_line)
     if verbose == True:
         print(code_line)
-    #immediately stop script upon a bad return code
+    # immediately stop script upon a bad return code
     if(rc != 0 and exit_on_err == True):
         exit('ERROR: plugin exited with error code: '+str(rc))
 
@@ -84,6 +84,7 @@ REVIEW = False
 OPEN_GUI = False
 INIT_ONLY = False
 LINT_ONLY = False
+SCRIPT_ONLY = False
 CLEAN = False
 # handle options
 for cur_arg in sys.argv[1:]:
@@ -97,6 +98,8 @@ for cur_arg in sys.argv[1:]:
         LINT_ONLY = True
     elif cur_arg == '--clean':
         CLEAN = True
+    elif cur_arg == '--script':
+        SCRIPT_ONLY = True
     elif prev_arg == '--generic' or prev_arg == '-g':
         gen = Generic.from_str(cur_arg)
         if gen != None:
@@ -122,7 +125,7 @@ if REVIEW == True:
 # change directory to build
 os.chdir(os.getenv("ORBIT_BUILD_DIR"))
 
-#track what libraries we have seen
+# track what libraries we have seen
 libraries = []
 
 py_model = None
@@ -137,11 +140,11 @@ with open(os.getenv("ORBIT_BLUEPRINT"), 'r') as blueprint:
     os.chdir(SIM_DIR)
 
     for rule in blueprint.readlines():
-        #split the rule by the spaces
+        # split the rule by the spaces
         fileset, library, path = rule.strip('\n').split('\t', maxsplit=3)
-        #compile external custom libraries
+        # compile external custom libraries
         if(fileset == "VHDL-RTL" or fileset == "VHDL-SIM"):
-            #create new modelsim library folder and mapping
+            # create new modelsim library folder and mapping
             if(library not in libraries):
                 invoke('vlib', [library])
                 invoke('vmap', [library, library])
@@ -149,9 +152,9 @@ with open(os.getenv("ORBIT_BLUEPRINT"), 'r') as blueprint:
             # compile vhdl
             invoke('vcom', ['-work', library, path])
             pass
-        #compile verilog source files
+        # compile verilog source files
         elif(fileset == "VLOG-RTL" or fileset == "VLOG-SIM"):
-            #create new modelsim library folder and mapping
+            # create new modelsim library folder and mapping
             if(library not in libraries):
                 invoke('vlib', [library])
                 invoke('vmap', [library, library])
@@ -159,11 +162,11 @@ with open(os.getenv("ORBIT_BLUEPRINT"), 'r') as blueprint:
             # compile verilog
             invoke('vlog', ['-work', library, path])
             pass
-        #see if there is a python model script to run before running testbench
+        # see if there is a python model script to run before running testbench
         elif(fileset == "PY-MODEL"):
             py_model = path
             pass
-        #see if there is a do file to run for opening modelsim
+        # see if there is a do file to run for opening modelsim
         elif(fileset == "DO-FILE"):
             tb_do_file = path
             pass
@@ -186,6 +189,11 @@ if py_model != None:
     for item in generics:
         py_generics += ['-g=' + item.to_str()]
     invoke(PYTHON_PATH, [py_model] + py_generics)
+    pass
+
+# only run the python script if script is only running
+if SCRIPT_ONLY == True:
+    exit()
 
 # 2. create a .do file to automate modelsim actions
 print("INFO: Generating .do file ...")

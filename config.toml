@@ -95,6 +95,7 @@ Usage:
     orbit build --plugin msim -- [options]
 
 Options:
+    --script                        only run the python model script, if exists
     --gui                           prepare the simulation for gui
     --review                        open an already existing waveform result 
     --init                          prepare the simulation for run
