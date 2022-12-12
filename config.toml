@@ -207,3 +207,41 @@ Options:
 Dependencies:
     Python (tested: 3.9.7)
 """
+
+[[plugin]]
+alias = "xsim"
+summary = "Perform simulation with Vivado's simulator"
+command = "python"
+args = ["./plugin/xsim.py"]
+fileset.xsim-tcl = "*_xsim.tcl"
+fileset.xsim-wcfg = "*.wcfg"
+fileset.py-model = "{{orbit.bench}}.py"
+details = """
+Compiles HDL files and runs a simulation in batch mode through Vivado Simulator.
+
+Generics set on the command-line with '--generic' are synchronized with the
+Vivado simulation and the Python software model script. Generics are entered 
+in the Python model script as command-line arguments in the format 
+'-g=<key>=<value>'.
+
+The 'cl' mode runs the simulation until finish with no gui. The 'gui' mode 
+loads a .wcfg with a filename matching ORBIT_BENCH and enters an interactive 
+simulation. The 'review' mode loads a .wdb and displays the results in Vivado.
+
+Usage:
+    orbit build --plugin xsim -- [options]
+
+Options:
+    --compile, -c               analyze and compile hdl source code
+    --elaborate, -e             create xsim snapshot for testbench
+    --simulate, -s <mode>       run simulation: 'cl', 'gui', 'review'
+    --script                    only invoke the python model script
+    --generic, -g <gen=value>   override toplevel generics
+
+Environment:
+    ORBIT_ENV_VIVADO_PATH             filesystem path to Vivado binaries
+
+Dependencies:
+    Vivado (tested: 2019.2)
+    Python (tested: 3.9.7)
+"""
