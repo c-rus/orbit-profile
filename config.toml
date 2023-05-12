@@ -1,3 +1,8 @@
+[download]
+command = "python"
+args = ["./download.py"]
+
+
 [[template]]
 alias = "std"
 summary = "basic project structure with rtl/ and sim/"
