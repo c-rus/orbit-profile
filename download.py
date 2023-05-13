@@ -15,6 +15,10 @@ if os.getenv("ORBIT_DOWNLOAD_LIST") != None:
     f = open(path)
     urls = f.readlines()
     f.close()
+    # quit early if found no work to be done
+    if len(urls) == 0:
+        print('info: No missing downloads')
+        exit(0)
 else:
     urls = sys.argv[1:]
 
