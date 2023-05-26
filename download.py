@@ -7,52 +7,27 @@
 #
 import sys, os
 import subprocess
+import random
 
-urls = []
-# gather list from environment variable specifying the path
-if os.getenv("ORBIT_DOWNLOAD_LIST") != None:
-    path = os.getenv("ORBIT_DOWNLOAD_LIST")
-    f = open(path)
-    urls = f.readlines()
-    f.close()
-    # quit early if found no work to be done
-    if len(urls) == 0:
-        print('info: No missing downloads')
-        exit(0)
-else:
-    urls = sys.argv[1:]
-
-if len(urls) == 0:
-    print('error: Script requires URLs as command-line arguments')
+if len(sys.argv) < 2:
+    print('error: Script requires URL as command-line argument')
     exit(101)
 
-zips = []
-for url in urls:
-    url = url.strip()
-    if url.endswith('.zip'):
-        zips += [url]
-    else:
-        print("warning: Unsupported URL '"+str(url)+"'")
-    pass
+# get the url
+URL = sys.argv[1]
 
 print("info: Identifying download destination ...")
 # determine the destination to place downloads for future installing
-result = subprocess.run(["orbit", "env", "ORBIT_QUEUE"], stdout=subprocess.PIPE)
 ORBIT_QUEUE = os.getenv("ORBIT_QUEUE")
 print("info: Download directory:", ORBIT_QUEUE)
 os.chdir(ORBIT_QUEUE)
 
-print("info: Downloading "+str(len(zips))+" package(s) ...")
+dest = ORBIT_QUEUE+'/'+str(random.randint(0, 999999))+'.zip'
+# download zip files using curl
+subprocess.run(["curl", "-L", URL, "-o", dest])
+# unzip contents
+subprocess.run(["unzip", "-qo", dest])
+# remove zip file
+subprocess.run(["rm", dest])
 
-dl_count = 0
-# iterate through each zip file URL
-for z in zips:
-    dest = ORBIT_QUEUE+'/'+str(dl_count)+'.zip'
-    # download zip files using curl
-    subprocess.run(["curl", "-L", z, "-o", dest])
-    # unzip contents
-    subprocess.run(["unzip", "-qo", dest])
-    # remove zip file
-    subprocess.run(["rm", dest])
-    dl_count += 1
-    pass
+exit(0)

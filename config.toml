@@ -1,4 +1,5 @@
-[download]
+[[protocol]]
+name = "zip"
 command = "python"
 args = ["./download.py"]
 
