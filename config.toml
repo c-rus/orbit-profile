@@ -1,16 +1,27 @@
 [[protocol]]
-name = "zip"
+name = "zip-op"
+summary = "Example protocol for handling zip file urls"
 command = "python"
-args = ["./download.py"]
+args = ["./protocol/download.py"]
 
 
-[[template]]
-alias = "std"
-summary = "basic project structure with rtl/ and sim/"
-path = "template/"
-ignore = [
-    "extra/"
-]
+[[protocol]]
+name = "git-op"
+summary = "Simple protocol for handling remote git repositories"
+command = "python"
+args = ["./protocol/git-op.py"]
+details = """
+Invokes the git cli tool to clone the repository the destination and checkout
+the defined tag. If the tag is omitted, it will attempt to checkout using the
+package's version field from the lock file entry.
+
+Format:
+    <url>[###<tag>]
+
+Dependencies:
+    Python (tested: 3.11.3)
+    Git (tested: 2.36.0)
+"""
 
 
 [[plugin]]
@@ -81,6 +92,7 @@ Dependencies:
     GHDL (tested: 3.0.0-dev (2.0.0.r101.g791ff0c1) [Dunoon edition])
     Python (tested: 3.8.6)
 """
+
 
 [[plugin]]
 alias = "msim"
@@ -164,6 +176,7 @@ Examples:
     orbit build --plugin viv-no-xpr -- --bit --pgm --part xc7z020
 """
 
+
 [[plugin]]
 alias = "viv-xpr"
 summary = "Backend Vivado project mode toolflow"
@@ -189,6 +202,7 @@ Dependencies:
     Vivado (tested: 2019.2)
 """
 
+
 [[plugin]]
 alias = "zipr"
 summary = "Compress files into a submission-like format"
@@ -213,6 +227,7 @@ Options:
 Dependencies:
     Python (tested: 3.9.7)
 """
+
 
 [[plugin]]
 alias = "xsim"
