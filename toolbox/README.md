@@ -16,3 +16,11 @@ Performing unit tests:
 ```
 python -m unittest src/toolbox/*.py
 ```
+
+## Installing
+
+Run the following command from this file's directory:
+
+```
+pip install .
+```

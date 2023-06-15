@@ -4,6 +4,11 @@ summary = "Example protocol for handling zip file urls"
 command = "python"
 args = ["./protocol/download.py"]
 
+[[protocol]]
+name = "git-op2"
+summary = "Accesses packages through git to handle remote repositories."
+command = "git"
+args = ["clone", "-b", "{{ orbit.ip.version }}", "{{ orbit.ip.source.url }}", "{{ orbit.queue }}/{{ orbit.ip.name }}"]
 
 [[protocol]]
 name = "git-op"
@@ -23,6 +28,14 @@ Dependencies:
     Git (tested: 2.36.0)
 """
 
+[[protocol]]
+name = "priv-zip-op"
+command = "curl"
+args = ["-u", "{{orbit.env.github.user}}", "-L", "{{orbit.ip.source.url}}", "--output-dir", "{{orbit.queue}}"]
+# curl -u <USER> -L -o <FILENAME> https://github.com/<USER>/<REPO>/archive/master.zip
+
+[env]
+GITHUB_USER = "c-rus"
 
 [[plugin]]
 alias = "quartus"
@@ -76,6 +89,8 @@ the vcd file will be the first argument to the command.
 Generics set on the command-line with '--generic' are synchronized with the ghdl
 simulation and the Python software model script. Generics are entered in the
 Python model script as command-line arguments in the format '-g=<key>=<value>'.
+
+Uses the VHDL-93 standard for compilation.
 
 Usage:
     orbit build --plugin ghdl -- [options]

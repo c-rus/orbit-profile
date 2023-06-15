@@ -63,8 +63,8 @@ def write_bits(file: __io.TextIOWrapper, *args) -> None:
     '''
     Writes binary representations to an opened text file `file`.
 
-    Each value is written on a new line after the preceeding value in the 
-    argument list.
+    Each value is written with a ',' after the preceeding value in the 
+    argument list. A newline is formed after all arguments
 
     ### Parameters
     - `file`: opened writeable text file
@@ -76,10 +76,12 @@ def write_bits(file: __io.TextIOWrapper, *args) -> None:
     for a in args:
         # auto-format as binary number
         if type(a) == int:
-            file.write(to_bin(a)+'\n')
+            file.write(to_bin(a)+',')
         # assume already formatted as binary number
         else:
-            file.write(str(a)+'\n')
+            file.write(str(a)+',')
+        pass
+    file.write('\n')
     pass
 
 
