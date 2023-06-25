@@ -1,4 +1,4 @@
 __pycache__/
 *.egg-info
-toolbox/dist/
-toolbox/build/
+*/dist/
+*/build/

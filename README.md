@@ -16,9 +16,9 @@ Link the profile's configuration file to your home configuration:
 orbit config --append include="profile/c-rus/config.toml"
 ```
 
-__Optional:__ Install Python helper functions for writing software models for HDL verification:
+__Optional:__ Install the Python implementation of `veracity` - a verification library for assisting in simulating HDL designs:
 ```
-pip install -e "$(orbit env ORBIT_HOME)/profile/c-rus/toolbox"
+pip install -e "$(orbit env ORBIT_HOME)/profile/c-rus/veracity"
 ```
 
 ## Updating

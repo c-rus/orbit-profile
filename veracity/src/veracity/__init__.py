@@ -7,6 +7,20 @@ from typing import List as _List
 
 # --- Classes and Functions ----------------------------------------------------
 
+def pow2m1(width: int):
+    '''
+    Computes the following formula: `2^(width)-1`   
+    '''
+    return (2**width)-1
+
+
+def pow(base: int, exp: int):
+    '''
+    Computes the followng formula: `base^exp`
+    '''
+    return base**exp
+
+
 def to_bin(n: int, width: int=None, trunc: bool=True) -> str:
     '''
     Converts the integer `n` to a binary string.

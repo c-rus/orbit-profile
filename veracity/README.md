@@ -1,4 +1,4 @@
-# `toolbox`
+# `veracity`
 
 ## Overview
 A collection of functions for writing HDL software models in the Python programming language.
@@ -14,7 +14,7 @@ This project is best used with Orbit and the defined plugins within this greater
 Performing unit tests:
 
 ```
-python -m unittest src/toolbox/*.py
+python -m unittest src/veracity/*.py
 ```
 
 ## Installing
