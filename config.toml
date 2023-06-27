@@ -98,6 +98,8 @@ Usage:
 Options:
     --view                          open the vcd file in a vcd viewer
     --generic, -g <name>=<value>    override a testbench generic
+    --code                          print glue logic for VHDL testbench
+    --seed [seed]                   set the rng seed
 
 Environment:
     ORBIT_ENV_GHDL_PATH         path to invoke GHDL binary

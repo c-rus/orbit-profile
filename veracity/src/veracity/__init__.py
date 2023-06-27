@@ -157,10 +157,11 @@ def get_generics(entity: str=None) -> dict:
         pass
 
     # override defaults with any values found on the command-line
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-g', '--generic', action='append', nargs='*', type=str)
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args()
     if args.generic != None:
+        arg: str
         for arg in args.generic:
             value = None
             name = arg[0]
@@ -169,6 +170,53 @@ def get_generics(entity: str=None) -> dict:
             gens[name] = value
 
     return gens
+
+
+from .model import SuperBfm as __SuperBfm
+
+
+def parse_args(bfm: __SuperBfm):
+    '''
+    Checks the command-line for any args.
+    '''
+    import argparse
+
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument('--code', action='store_true', default=False)
+    args, _unknown = parser.parse_known_args()
+   
+    # print code and exit
+    if args.code == True:
+        # print the VHDL code for the bfm record type to connect to UUT
+        print(bfm.get_vhdl_record_bfm())
+        # print VHDL code to make procedure in DRIVER stage
+        print(bfm.get_vhdl_process_inputs())
+        # print VHDL code to make procedure in the CHECKER stage
+        print(bfm.get_vhdl_process_outputs())
+        exit(0)
+    pass
+
+__seed = None
+
+def get_seed(default: int=None) -> int:
+    '''
+    Returns a seed integer value to be used to set the random number generator.
+
+    Parses command-line arguments for '--seed' [SEED]. If [SEED] is not given, then
+    `None` will be returned. If '--seed' is not given, then the `default` will be
+    returned.
+    '''
+    import argparse, sys, random
+    global __seed
+
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument('--seed', action='store', type=int, nargs='?', default=default, const=None)
+    args, _unknown = parser.parse_known_args()
+
+    if __seed is None:
+        __seed = random.randrange(sys.maxsize)
+    # set the seed value
+    return args.seed if args.seed is not None else __seed
 
 
 def interp_vhdl_bool(s: str) -> bool:
