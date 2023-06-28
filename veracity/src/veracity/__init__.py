@@ -1,9 +1,7 @@
 __all__ = ["coverage", "model"]
 
-import io as _io
 import unittest as _ut
 import math as _math
-from typing import List as _List
 
 # --- Classes and Functions ----------------------------------------------------
 
@@ -21,41 +19,63 @@ def pow(base: int, exp: int):
     return base**exp
 
 
-def to_bin(n: int, width: int=None, trunc: bool=True) -> str:
+def to_logic(n, width: int=None, trunc: bool=True, big_endian=True) -> str:
     '''
     Converts the integer `n` to a binary string.
 
     If `n` is negative, the two's complement representation will be returned.
+    When translating a list, the 0th index corresponds to the LSB when `big_endian`
+    is set to true. In other words, big-endianness will assume the `n[0]` is the LSB.
 
     ### Parameters
-    - `n`: integer number to convert
+    - `n`: integer number or list of 1s and 0s to transform
     - `width`: specify the number of bits (never truncates) 
     - `trunc`: trim upper-most bits if width is less than required bit count
+    - `big_endian`: if true, store MSB bit first (LHS) and use range 'downto'
 
     ### Returns
     - `str` of 1's and 0's
     '''
-    bin_str = bin(n)
-    is_negative = bin_str[0] == '-'
-    # auto-define a width
-    if width == None:
-        width = 1 if n == 0 else _math.ceil(_math.log(abs(n) + 0.5, 2))
-        # extend to use negative MSB
+    logic_vec = ''
+    # handle vector of ints (1s and 0s)
+    if isinstance(n, list) == True:
+        for bit in n: logic_vec += str(bit)
+        # flip to default big-endianness
+        logic_vec = logic_vec[::-1]
+        if width is None:
+            width = len(n)
+    # handle pure integer values
+    elif isinstance(n, int) == True:
+        bin_str = bin(n)
+        is_negative = bin_str[0] == '-'
+        # auto-define a width
+        if width == None:
+            width = 1 if n == 0 else _math.ceil(_math.log(abs(n) + 0.5, 2))
+            # extend to use negative MSB
+            if is_negative == True:
+                width += 1
+        # compute 2's complement representation
         if is_negative == True:
-            width += 1
-    # compute 2's complement representation
-    if is_negative == True:
-        bin_str = bin(2**width + n)
+            bin_str = bin(2**width + n)
+        # assign to outer variable
+        logic_vec = bin_str[2:]
+        pass
+    
     # fill with zeros on the left depending on 'width' (never truncates)
-    bin_str = bin_str[2:].zfill(width)
+    logic_vec = logic_vec.zfill(width)
+
     # truncate upper bits
-    if trunc == True and width < len(bin_str):
-        return bin_str[len(bin_str)-width:]
-    else:
-        return bin_str
+    if trunc == True and width < len(logic_vec):
+        logic_vec = logic_vec[len(logic_vec)-width:]
+
+    # flip based on endianness
+    if big_endian == False:
+        logic_vec = logic_vec[::-1]
+
+    return logic_vec
 
 
-def from_bin(b: str, signed: bool=False) -> int:
+def from_logic(b: str, signed: bool=False) -> int:
     '''
     Converts the binary string `b` to an integer representation.
     
@@ -73,32 +93,6 @@ def from_bin(b: str, signed: bool=False) -> int:
         return (int('0b'+flipped, base=2)+1) * -1
     else:
         return int('0b'+b, base=2)
-
-
-def write_bits(file: _io.TextIOWrapper, *args) -> None:
-    '''
-    Writes binary representations to an opened text file `file`.
-
-    Each value is written with a ',' after the preceeding value in the 
-    argument list. A newline is formed after all arguments
-
-    ### Parameters
-    - `file`: opened writeable text file
-    - `*args`: integers or binary strings to write to file in order given
-
-    ### Returns
-    - None
-    '''
-    for a in args:
-        # auto-format as binary number
-        if type(a) == int:
-            file.write(to_bin(a)+',')
-        # assume already formatted as binary number
-        else:
-            file.write(str(a)+',')
-        pass
-    file.write('\n')
-    pass
 
 
 def get_generics(entity: str=None) -> dict:
@@ -196,6 +190,7 @@ def parse_args(bfm: __SuperBfm):
         exit(0)
     pass
 
+
 __seed = None
 
 def get_seed(default: int=None) -> int:
@@ -235,92 +230,81 @@ def interp_vhdl_opt(s: str) -> bool:
     return s.lower() == 'enable'
 
 
-def vec_int_to_str(vec: _List[int], big_endian=True) -> str:
-    '''
-    Casts a list containing `int` to a `str` as big-endian.
-
-    Big-endianness will assume the vec[0] is the LSB.
-    '''
-    word = ''
-    for bit in vec: word += str(bit)
-    if big_endian == True:
-        word = word[::-1]
-    return word
-
-
-# --- Example Logic ------------------------------------------------------------
-
-# example code for replicating logic behavior in software
-
-# INPUT_FILE = open('inputs.dat', 'w')
-# OUTPUT_FILE = open('outputs.dat', 'w')
-
-# WIDTH = 8
-
-# for i in range(0, 100):
-#     # generate random inputs
-#     in_a = random.randint(0, 2**WIDTH-1)
-#     in_b = random.randint(0, 2**WIDTH-1)
-#     c_in = random.randint(0, 1)
-
-#     # write inputs to file
-#     write_bits(INPUT_FILE, 
-#         to_bin(in_a, WIDTH), 
-#         to_bin(in_b, WIDTH), 
-#         c_in,
-#         )
-
-#     # replicate logic behavior
-#     result = in_a + in_b + c_in
-
-#     # transform to binary representation
-#     result_b = to_bin(result, WIDTH+1) 
-#     # write outputs to file
-#     write_bits(OUTPUT_FILE,
-#         result_b[0],  # cout
-#         result_b[1:], # sum
-#         )
-#     pass
-
-# INPUT_FILE.close()
-# OUTPUT_FILE.close()
-
-
 # --- Tests --------------------------------------------------------------------
 
 class __Test(_ut.TestCase):
 
-    def test_to_bin(self):
-        self.assertEqual('001', to_bin(1, width=3))
-        self.assertEqual('10', to_bin(2))
-        self.assertEqual('1011', to_bin(-5))
-        self.assertEqual('101', to_bin(5))
-        self.assertEqual('0', to_bin(0))
-        self.assertEqual('11', to_bin(-1))
-        self.assertEqual('01111', to_bin(15, 5))
+    def test_to_logic_using_int(self):
+        self.assertEqual('001', to_logic(1, width=3))
+
+        self.assertEqual('10', to_logic(2))
+
+        self.assertEqual('1011', to_logic(-5))
+
+        self.assertEqual('101', to_logic(5))
+
+        self.assertEqual('0', to_logic(0))
+
+        self.assertEqual('11', to_logic(-1))
+
+        self.assertEqual('01111', to_logic(15, 5))
         # truncate upper bits to keep lower 2 bits
-        self.assertEqual('11', to_bin(15, width=2, trunc=True))
+        self.assertEqual('11', to_logic(15, width=2, trunc=True))
         # keep upper two bits
-        self.assertEqual('00', to_bin(3, width=4)[:2])
+        self.assertEqual('00', to_logic(3, width=4)[:2])
         # represent a number that requires more than 32 bits
-        self.assertEqual('100000000000000000000000000000000', to_bin(2**32))
+        self.assertEqual('100000000000000000000000000000000', to_logic(2**32))
+
+        self.assertEqual('011', to_logic(6, big_endian=False))
+
+        self.assertEqual('110', to_logic(6, big_endian=True))
+
+        self.assertEqual('01', to_logic(6, width=2, big_endian=False))
         pass
 
 
-    def test_from_bin(self):
-        self.assertEqual(10, from_bin('1010'))
-        self.assertEqual(-6, from_bin('1010', signed=True))
-        self.assertEqual(5, from_bin('00000101'))
-        pass
-
-
-    def test_vec_int_to_str(self):
+    def test_to_logic_using_list(self):
         vec = [0, 1, 1, 0]
-        self.assertEqual(vec_int_to_str(vec), '0110')
+        self.assertEqual(to_logic(vec), '0110')
 
         vec = [1, 1, 1, 0, 0, 0]
-        self.assertEqual(vec_int_to_str(vec), '000111')
+        self.assertEqual(to_logic(vec), '000111')
 
         vec = [1, 1, 1, 0, 0, 0]
-        self.assertEqual(vec_int_to_str(vec, False), '111000')
+        self.assertEqual(to_logic(vec, big_endian=False), '111000')
+
+        vec = [1, 0, 1, 0]
+        self.assertEqual(to_logic(vec, width=3), '101')
+
+        vec = [1, 1, 0, 0, 1]
+        self.assertEqual(to_logic(vec, width=2, big_endian=False), '11')
+        pass
+
+
+    def test_from_logic(self):
+        self.assertEqual(10, from_logic('1010'))
+
+        self.assertEqual(-6, from_logic('1010', signed=True))
+
+        self.assertEqual(5, from_logic('00000101'))
+        pass
+
+
+    def test_pow2m1(self):
+        self.assertEqual(pow2m1(0), 0)
+
+        self.assertEqual(pow2m1(1), 1)
+
+        self.assertEqual(pow2m1(3), 7)
+
+        self.assertEqual(pow2m1(4), 15)
+
+        self.assertEqual(pow2m1(8), 255)
+        pass
+
+
+    def test_pow(self):
+        self.assertEqual(pow(3, 4), 81)
+        pass
+
     pass

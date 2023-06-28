@@ -102,9 +102,9 @@ for cur_arg in sys.argv:
         disp_teskit_code = True
     elif cur_arg == RAND_SEED:
         set_seed = True
-    elif prev_arg == RAND_SEED:
+    elif prev_arg == RAND_SEED and cur_arg[0] != '-':
         rng_seed = int(cur_arg)
-    elif prev_arg == '--generic' or prev_arg == '-g':
+    elif (prev_arg == '--generic' or prev_arg == '-g') and cur_arg[0] != '-':
         gen = Generic.from_str(cur_arg)
         if gen != None:
             generics += [gen]
@@ -189,11 +189,7 @@ if py_model != None:
            + ([RAND_SEED] if set_seed == True else [])
            + ([str(rng_seed)] if rng_seed is not None else [])
         )
-
-    if disp_teskit_code == True:
-        exit(0)
     pass
-
 
 BYPASS_FAILURE = VCD_VIEWER != None
 
