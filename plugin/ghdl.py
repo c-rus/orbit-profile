@@ -1,20 +1,21 @@
 # ------------------------------------------------------------------------------
 # Script   : ghdl.py
 # Engineer : Chase Ruskin
-# Modified : 2022/09/03
+# Modified : 2023/06/29
 # Created  : 2022/08/20
 # Details  :
 #   @todo
 # ------------------------------------------------------------------------------
 import os, sys
+import argparse
 from typing import List
 
-# --- constants ----------------------------------------------------------------
+from mod import Command, Status, Env, Generic, quote_str
+
+# --- Constants ----------------------------------------------------------------
 
 BYPASS_FAILURE = False
-SIM_DIR = 'ghdl-sim'
-
-VHDL_EDITION = '93'
+SIM_DIR = 'sim-ghdl'
 
 OPEN_VCD_VIEWER = False
 
@@ -22,18 +23,11 @@ OPEN_VCD_VIEWER = False
 PYTHON_PATH = os.path.basename(sys.executable)
 
 # define ghdl path
-GHDL_PATH = os.environ.get("ORBIT_ENV_GHDL_PATH")
-if GHDL_PATH == None:
-    GHDL_PATH = 'ghdl'
-
+GHDL_PATH: str = Env.read("ORBIT_ENV_GHDL_PATH", default='ghdl')
 # define a vcd viewer
-VCD_VIEWER = os.environ.get("ORBIT_ENV_VCD_VIEWER")
+VCD_VIEWER: str = Env.read("ORBIT_ENV_VCD_VIEWER")
 
-# arguments
-GLUE_LOGIC = '--code'
-RAND_SEED = '--seed'
-
-# --- classes and functions ----------------------------------------------------
+# --- Classes and functions ----------------------------------------------------
 
 class Vhdl:
     def __init__(self, lib: str, path: str):
@@ -42,95 +36,36 @@ class Vhdl:
         pass
     pass
 
+# --- Process command-line inputs ----------------------------------------------
 
-class Generic:
-    def __init__(self, key: str, val: str):
-        self.key = key
-        self.val = val
-        pass
-    pass
+# arguments
+GLUE_LOGIC = '--code'
+RAND_SEED = '--seed'
 
+parser = argparse.ArgumentParser()
 
-    @classmethod
-    def from_str(self, s: str):
-        # split on equal sign
-        words = s.split('=', 1)
-        if len(words) != 2:
-            return None
-        return Generic(words[0], words[1])
+parser.add_argument('--view', action='store_true', default=False, help='open the vcd file in a waveform viewer')
+parser.add_argument('--lint', action='store_true', default=False, help='run static analysis and exit')
+parser.add_argument(GLUE_LOGIC, action='store_true', default=False, help='print VHDL glue logic code for Python model')
+parser.add_argument(RAND_SEED, action='store', type=int, nargs='?', default=None, const=None, metavar='num', help='set the randomness seed')
+parser.add_argument('--generic', '-g', action='append', type=Generic.from_arg, default=[], metavar='key=value', help='override top-level VHDL generics')
+parser.add_argument('--std', action='store', default='93', metavar='edition', help="specify the VHDL edition (87, 93, 02, 08, 19)")
 
+args = parser.parse_args()
 
-    def to_str(self) -> str:
-        return self.key+'='+self.val
-    pass
+set_seed: bool = sys.argv.count(RAND_SEED) > 0
+generics: List[Generic] = args.generic
 
+# --- Collect data from the blueprint ------------------------------------------
 
-def quote_str(s: str) -> str:
-    '''Wraps the string `s` around double quotes `\"` characters.'''
-    return '\"' + s + '\"'
+# enter the build directory for the rest of the workflow
+BUILD_DIR = Env.read("ORBIT_BUILD_DIR", missing_ok=False)
+os.chdir(BUILD_DIR)
 
+BLUEPRINT = Env.read("ORBIT_BLUEPRINT", missing_ok=False)
 
-def invoke(command: str, args: List[str], verbose: bool=False, exit_on_err: bool=True):
-    '''
-    Runs a subprocess calling `command` with a series of `args`.
-
-    Prints the command if `verbose` is `True`.
-    '''
-    code_line = quote_str(command) + ' '
-    for c in args:
-        code_line = code_line + quote_str(c) + ' '
-    rc = os.system(code_line)
-    if verbose == True:
-        print(code_line)
-    #immediately stop script upon a bad return code
-    if(rc != 0 and exit_on_err == True):
-        exit('ERROR: Plugin exited with error code: '+str(rc))
-
-
-# --- process command-line inputs ----------------------------------------------
-
-generics = []
-prev_arg = ''
-disp_teskit_code = False
-set_seed = False
-rng_seed = None
-# handle options
-for cur_arg in sys.argv:
-    if cur_arg == '--view':
-        OPEN_VCD_VIEWER = True
-    elif cur_arg == GLUE_LOGIC:
-        disp_teskit_code = True
-    elif cur_arg == RAND_SEED:
-        set_seed = True
-    elif prev_arg == RAND_SEED and cur_arg[0] != '-':
-        rng_seed = int(cur_arg)
-    elif (prev_arg == '--generic' or prev_arg == '-g') and cur_arg[0] != '-':
-        gen = Generic.from_str(cur_arg)
-        if gen != None:
-            generics += [gen]
-        else:
-            exit('ERROR: Invalid generic entered as ' + cur_arg)
-        pass
-    prev_arg = cur_arg
-    pass
-
-# --- verify the planning phase was previously ran -----------------------------
-
-# verify the build directory exists
-BUILD_DIR = os.environ.get("ORBIT_BUILD_DIR")
-try:
-    os.chdir(BUILD_DIR)
-except:
-    exit("ERROR: Build directory '"+str(BUILD_DIR)+"' does not exist")
-
-# verify a blueprint exists
-BLUEPRINT = os.environ.get("ORBIT_BLUEPRINT")
-if os.path.exists(BLUEPRINT) == False:
-    exit("ERROR: Blueprint file does not exist in build directory '"+BUILD_DIR+"'")
-
-# --- collect data from the blueprint ------------------------------------------
-
-rtl_order = []
+# @todo: create abstract blueprint class
+rtl_order: List[Vhdl] = []
 py_model = None
 with open(BLUEPRINT, 'r') as blueprint:
     for rule in blueprint.readlines():
@@ -144,78 +79,79 @@ with open(BLUEPRINT, 'r') as blueprint:
         pass
     pass
 
+# --- Perform workflow ---------------------------------------------------------
+
 # enter GHDL simulation working directory
 os.makedirs(SIM_DIR, exist_ok=True)
 os.chdir(SIM_DIR)
 
 # only display glue logic code if requested and exit
-if py_model is not None and disp_teskit_code == True:
-    print("INFO: Writing Python software model glue logic for VHDL testbench ...")
-    # format generics for SW MODEL
-    py_generics = []
-    item: Generic
-    for item in generics:
-        py_generics += ['-g=' + item.to_str()]
+if py_model is not None and args.code == True:
+    print("info: Writing Python software model glue logic for VHDL testbench ...")
 
-    invoke(PYTHON_PATH, [py_model] 
-           + py_generics 
-           + ([GLUE_LOGIC] if disp_teskit_code == True else []) 
-           + ([RAND_SEED] if set_seed == True else [])
-           + ([str(rng_seed)] if rng_seed is not None else [])
-        )
-    
+    Command(PYTHON_PATH) \
+        .arg(py_model) \
+        .args(['-g=' + item.to_str() for item in generics]) \
+        .arg(GLUE_LOGIC if args.code == True else None) \
+        .arg(RAND_SEED if set_seed == True else None) \
+        .arg(args.seed) \
+        .spawn() \
+        .unwrap()
     exit(0)
 
 # analyze units
-print("INFO: Analyzing HDL source code ...")
+print("info: Analyzing HDL source code ...")
 item: Vhdl
 for item in rtl_order:
-    print('   * Analyzing '+quote_str(item.path))
-    invoke(GHDL_PATH, ['-a', '--ieee=synopsys', '--std='+VHDL_EDITION, '--work='+str(item.lib), item.path])
+    print('   * Analyzing', quote_str(item.path))
+    Command(GHDL_PATH) \
+        .args(['-a', '--ieee=synopsys', '--std='+args.std, '--work='+str(item.lib), item.path]) \
+        .spawn() \
+        .unwrap()
     pass
+
+# halt workflow here when only providing lint
+if args.lint == True:
+    print("info: Static analysis complete")
+    exit(0)
 
 # pre-simulation hook: generate test vectors
 if py_model != None:
-    print("INFO: Running Python software model ...")
-    # format generics for SW MODEL
-    py_generics = []
-    item: Generic
-    for item in generics:
-        py_generics += ['-g=' + item.to_str()]
+    print("info: Running Python software model ...")
 
-    invoke(PYTHON_PATH, [py_model] 
-           + py_generics 
-           + ([GLUE_LOGIC] if disp_teskit_code == True else []) 
-           + ([RAND_SEED] if set_seed == True else [])
-           + ([str(rng_seed)] if rng_seed is not None else [])
-        )
+    Command(PYTHON_PATH) \
+        .arg(py_model) \
+        .args(['-g=' + item.to_str() for item in generics]) \
+        .arg(GLUE_LOGIC if args.code == True else None) \
+        .arg(RAND_SEED if set_seed == True else None) \
+        .arg(args.seed) \
+        .spawn() \
+        .unwrap()
     pass
 
-BYPASS_FAILURE = VCD_VIEWER != None
+BYPASS_FAILURE = VCD_VIEWER is not None
 
 # determine level of severity to exit
-severity_arg = '--assert-level='
-if BYPASS_FAILURE == True:
-    severity_arg += 'none'
-else:
-    severity_arg += 'failure'
+severity_arg = '--assert-level=' + ('none' if BYPASS_FAILURE == True else 'failure')
 
-BENCH = os.environ.get("ORBIT_BENCH")
+BENCH = Env.read("ORBIT_BENCH", missing_ok=True)
+
+if BENCH is None:
+    exit('error: No testbench to simulate\n\nUse \"--lint\" to only compile the HDL code or set a testbench to simulate')
+
+VCD_FILE = str(BENCH)+'.vcd'
 
 # run simulation
-if(BENCH != None):
-    VCD_FILE = str(BENCH)+'.vcd'
-    print("INFO: Starting VHDL simulation for testbench "+BENCH+" ...")
-    # format generics for GHDL
-    ghdl_generics = []
-    for item in generics:
-        ghdl_generics += ['-g'+item.to_str()]
-        pass
-    invoke(GHDL_PATH, ['-r', '--ieee=synopsys', BENCH, '--vcd='+VCD_FILE, severity_arg] + ghdl_generics, exit_on_err=not BYPASS_FAILURE)
+print("info: Starting VHDL simulation for testbench", quote_str(BENCH), "...")
+status: Status = Command(GHDL_PATH) \
+    .args(['-r', '--ieee=synopsys', BENCH, '--vcd='+VCD_FILE, severity_arg]) \
+    .args(['-g' + item.to_str() for item in generics]) \
+    .spawn()
 
-    # open the vcd file
-    if(VCD_VIEWER != None and OPEN_VCD_VIEWER == True):
-        invoke(VCD_VIEWER, [VCD_FILE])
-        pass
-else:
-    print('WARNING: No testbench entity detected')
+if BYPASS_FAILURE == False:
+    status.unwrap()
+
+# open the vcd file
+if(VCD_VIEWER != None and args.view == True):
+    Command(VCD_VIEWER).arg(VCD_FILE).spawn().unwrap()
+    pass

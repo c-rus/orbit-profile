@@ -118,16 +118,16 @@ def get_generics(entity: str=None) -> dict:
     import subprocess, os, argparse
     gens = dict()
     BENCH = entity if entity != None else os.environ.get('ORBIT_BENCH')
-    # check if a testbench is provided
-    if BENCH == None:
-        print('warning: No generics to extract because no entity is set')
-    
+
     # grab default values from testbench
     command_success = True
     try:
         signals = subprocess.check_output(['orbit', 'get', BENCH, '--signals']).decode('utf-8').strip()
-    except:
-        print('warning: Failed to extract generics from entity \''+BENCH+'\'')
+    except: 
+        if BENCH is not None:
+            print('warning: Failed to extract generics from entity \"'+BENCH+'\"')
+        else:
+            print('warning: No testbench set as environment variable \"ORBIT_BENCH\"')
         command_success = False
 
     # act on the data returned from `Orbit` if successfully ran

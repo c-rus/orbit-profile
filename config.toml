@@ -90,20 +90,23 @@ Generics set on the command-line with '--generic' are synchronized with the ghdl
 simulation and the Python software model script. Generics are entered in the
 Python model script as command-line arguments in the format '-g=<key>=<value>'.
 
-Uses the VHDL-93 standard for compilation.
+By default, this plugin uses the VHDL-93 standard for compilation.
 
 Usage:
     orbit build --plugin ghdl -- [options]
 
 Options:
-    --view                          open the vcd file in a vcd viewer
-    --generic, -g <name>=<value>    override a testbench generic
-    --code                          print glue logic for VHDL testbench
-    --seed [seed]                   set the rng seed
+    --help, -h                      show help message and exit
+    --view                          open the vcd file in a waveform viewer
+    --lint                          run static analysis and exit
+    --code                          print VHDL glue logic code for Python model
+    --seed [num]                    set the randomness seed
+    --generic, -g <key>=<value>     override top-level VHDL generics
+    --std <edition>                 specify the VHDL edition (87, 93, 02, 08, 19)
 
 Environment:
-    ORBIT_ENV_GHDL_PATH         path to invoke GHDL binary
-    ORBIT_ENV_VCD_VIEWER        path to invoke a VCD program
+    ORBIT_ENV_GHDL_PATH             command path to run GHDL binary
+    ORBIT_ENV_VCD_VIEWER            command path to run VCD program
 
 Dependencies:
     GHDL (tested: 3.0.0-dev (2.0.0.r101.g791ff0c1) [Dunoon edition])
