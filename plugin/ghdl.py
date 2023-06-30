@@ -1,16 +1,19 @@
-##! File     : ghdl.py
-##! Engineer : Chase Ruskin
+##! File        : ghdl.py
+##! Engineer    : Chase Ruskin
 ##!
-##! Modified : 2023-06-29
-##! Created  : 2022-08-20
+##! Modified    : 2023-06-29
+##! Created     : 2022-08-20
 ##!
-##! Details  :
+##! Details     :
 ##!   Defines a common workflow for working with the GHDL simulator and software
 ##!   models written in Python used for generating test vector I/O. Generics
 ##!   are passed to the software script as well as the VHDL testbench for
 ##!   synchronization across code
 ##!
 ##!   The script is written to be used as the entry-point to an Orbit plugin.
+##!
+##! References  :
+##!     [1] https://github.com/ghdl/ghdl
 
 import os, sys
 import argparse

@@ -42,7 +42,7 @@ alias = "quartus"
 summary = "Complete toolflow for Intel Quartus Prime backend program"
 command = "python"
 args = ["./plugin/quartus.py"]
-fileset.pin-plan = "*.board"
+fileset.board-cf = "*.board"
 fileset.bdf-file = "*.bdf"
 details = """
 Toolflow actions will perform necessary preceding steps (synth, route, 
@@ -57,7 +57,8 @@ Options:
     --synth         perform analysis and elaboration
     --route         fit the design to the board and assign pins
     --bit           generate a bitstream file for programming to FPGA
-    -g <id>=<value> set a top-level generic
+    --generic, -g <key>=<value> 
+                    set a top-level generic
     --sta           run a static timing analysis
     --eda-netlist   use MAXII device for .sdo and .vho files in timing sim
     --compile       run through entire flow

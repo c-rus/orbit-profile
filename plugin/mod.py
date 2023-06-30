@@ -4,15 +4,17 @@
 #   Common functions used across plugins written in Python.
 #
 import os
-from typing import List
+from typing import List, Tuple
 from enum import Enum
 import argparse
+import subprocess
 
 class Env:
     @staticmethod
     def quote_str(s: str) -> str:
         '''Wraps the string `s` around double quotes `\"` characters.'''
         return '\"' + s + '\"'
+
 
     @staticmethod
     def read(key: str, default: str=None, missing_ok: bool=True) -> None:
@@ -26,6 +28,14 @@ class Env:
             else:
                 value = default
         return value
+    
+
+    @staticmethod
+    def add_path(path: str) -> bool:
+        if path is not None and os.path.exists(path) and path not in os.getenv("PATH"):
+            os.environ["PATH"] += os.pathsep + path
+            return True
+        return False
     pass
 
 
@@ -67,9 +77,6 @@ class Blueprint:
         return rules
 
     pass
-
-
-
 
 
 class Generic:
@@ -152,4 +159,26 @@ class Command:
             print('info:', job)
         status = os.system(job)
         return Status.from_int(status)
+    
+
+    def output(self, verbose: bool=False) -> Tuple[str, Status]:
+        job = [self._command] + self._args
+        # display the command being executed
+        if verbose == True:
+            command_line = ''
+            for c in job:
+                command_line = command_line + ' ' + Env.quote_str(c)
+            print('info:', command_line)
+        # execute the command and capture channels for stdout and stderr
+        try:
+            pipe = subprocess.Popen(job, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        except FileNotFoundError:
+            print('error: Command not found: \"'+self._command+'\"')
+            return ('', Status.FAIL)
+        out, err = pipe.communicate()
+        if err is not None:
+            return (err.decode('utf-8'), Status.FAIL)
+        if out is not None:
+            return (out.decode('utf-8'), Status.OKAY)
+        return ('', Status.OKAY)
     pass
