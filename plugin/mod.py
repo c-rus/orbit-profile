@@ -8,10 +8,68 @@ from typing import List
 from enum import Enum
 import argparse
 
+class Env:
+    @staticmethod
+    def quote_str(s: str) -> str:
+        '''Wraps the string `s` around double quotes `\"` characters.'''
+        return '\"' + s + '\"'
 
-def quote_str(s: str) -> str:
-    '''Wraps the string `s` around double quotes `\"` characters.'''
-    return '\"' + s + '\"'
+    @staticmethod
+    def read(key: str, default: str=None, missing_ok: bool=True) -> None:
+        value = os.environ.get(key)
+        # do not allow empty values to trigger variable
+        if value is not None and len(value) == 0:
+            value = None
+        if value is None:
+            if missing_ok == False:
+                exit("error: Environment variable "+Env.quote_str(key)+" does not exist")
+            else:
+                value = default
+        return value
+    pass
+
+
+class Hdl:
+    def __init__(self, lib: str, path: str):
+        self.lib = lib
+        self.path = path
+        pass
+    pass
+
+
+class Rule:
+
+    def __init__(self, fileset, identifier, path):
+        self.fileset = fileset
+        self.identifier = identifier
+        self.path = path
+        pass
+    pass
+
+
+class Blueprint:
+
+    def __init__(self):
+        self._file = Env.read("ORBIT_BLUEPRINT", missing_ok=False)
+        pass
+
+
+    def parse(self) -> List[Rule]:
+        rules = []
+        # read each line of the blueprint to parse the rules
+        with open(self._file, 'r') as blueprint:
+            for rule in blueprint.readlines():
+                # remove newline and split into three components
+                fileset, identifier, path = rule.strip().split('\t')
+                rules += [Rule(fileset, identifier, path)]
+                pass
+            pass
+        return rules
+
+    pass
+
+
+
 
 
 class Generic:
@@ -35,29 +93,13 @@ class Generic:
     def from_arg(self, s: str):
         result = Generic.from_str(s)
         if result is None:
-            msg = "Generic "+quote_str(s)+" is missing <value>"
+            msg = "Generic "+Env.quote_str(s)+" is missing <value>"
             raise argparse.ArgumentTypeError(msg)
         return result
 
 
     def to_str(self) -> str:
         return self.key+'='+self.val
-    pass
-
-
-class Env:
-    @staticmethod
-    def read(key: str, default: str=None, missing_ok: bool=True) -> None:
-        value = os.environ.get(key)
-        # do not allow empty values to trigger variable
-        if value is not None and len(value) == 0:
-            value = None
-        if value is None:
-            if missing_ok == False:
-                exit("error: Environment variable "+quote_str(key)+" does not exist")
-            else:
-                value = default
-        return value
     pass
 
 
@@ -103,9 +145,9 @@ class Command:
     
 
     def spawn(self, verbose: bool=False) -> Status:
-        job = quote_str(self._command)
+        job = Env.quote_str(self._command)
         for c in self._args:
-            job = job + ' ' + quote_str(c)
+            job = job + ' ' + Env.quote_str(c)
         if verbose == True:
             print('info:', job)
         status = os.system(job)

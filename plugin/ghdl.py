@@ -1,23 +1,27 @@
-# ------------------------------------------------------------------------------
-# Script   : ghdl.py
-# Engineer : Chase Ruskin
-# Modified : 2023/06/29
-# Created  : 2022/08/20
-# Details  :
-#   @todo
-# ------------------------------------------------------------------------------
+##! File     : ghdl.py
+##! Engineer : Chase Ruskin
+##!
+##! Modified : 2023-06-29
+##! Created  : 2022-08-20
+##!
+##! Details  :
+##!   Defines a common workflow for working with the GHDL simulator and software
+##!   models written in Python used for generating test vector I/O. Generics
+##!   are passed to the software script as well as the VHDL testbench for
+##!   synchronization across code
+##!
+##!   The script is written to be used as the entry-point to an Orbit plugin.
+
 import os, sys
 import argparse
 from typing import List
 
-from mod import Command, Status, Env, Generic, quote_str
+from mod import Command, Status, Env, Generic, Blueprint, Hdl
 
 # --- Constants ----------------------------------------------------------------
 
-BYPASS_FAILURE = False
-SIM_DIR = 'sim-ghdl'
-
-OPEN_VCD_VIEWER = False
+# directory to store artifacts within build directory.
+SIM_DIR = 'ghdl'
 
 # define python path
 PYTHON_PATH = os.path.basename(sys.executable)
@@ -27,22 +31,13 @@ GHDL_PATH: str = Env.read("ORBIT_ENV_GHDL_PATH", default='ghdl')
 # define a vcd viewer
 VCD_VIEWER: str = Env.read("ORBIT_ENV_VCD_VIEWER")
 
-# --- Classes and functions ----------------------------------------------------
-
-class Vhdl:
-    def __init__(self, lib: str, path: str):
-        self.lib = lib
-        self.path = path
-        pass
-    pass
-
-# --- Process command-line inputs ----------------------------------------------
+# --- Define command-line arguments --------------------------------------------
 
 # arguments
 GLUE_LOGIC = '--code'
 RAND_SEED = '--seed'
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(allow_abbrev=False)
 
 parser.add_argument('--view', action='store_true', default=False, help='open the vcd file in a waveform viewer')
 parser.add_argument('--lint', action='store_true', default=False, help='run static analysis and exit')
@@ -62,21 +57,14 @@ generics: List[Generic] = args.generic
 BUILD_DIR = Env.read("ORBIT_BUILD_DIR", missing_ok=False)
 os.chdir(BUILD_DIR)
 
-BLUEPRINT = Env.read("ORBIT_BLUEPRINT", missing_ok=False)
+py_model: str = None
+rtl_order: List[Hdl] = []
 
-# @todo: create abstract blueprint class
-rtl_order: List[Vhdl] = []
-py_model = None
-with open(BLUEPRINT, 'r') as blueprint:
-    for rule in blueprint.readlines():
-        # remove newline and split into three components
-        fileset, identifier, path = rule.strip().split('\t')
-        # conditionally handle different supported filesets
-        if fileset == 'VHDL-RTL' or fileset == 'VHDL-SIM':
-            rtl_order += [Vhdl(identifier, path)]
-        elif fileset == 'PY-MODEL':
-            py_model = path
-        pass
+for rule in Blueprint().parse():
+    if rule.fileset == 'VHDL-RTL' or rule.fileset == 'VHDL-SIM':
+        rtl_order += [Hdl(rule.identifier, rule.path)]
+    elif rule.fileset == 'PY-MODEL':
+        py_model = rule.path
     pass
 
 # --- Perform workflow ---------------------------------------------------------
@@ -101,9 +89,9 @@ if py_model is not None and args.code == True:
 
 # analyze units
 print("info: Analyzing HDL source code ...")
-item: Vhdl
+item: Hdl
 for item in rtl_order:
-    print('   * Analyzing', quote_str(item.path))
+    print('   * Analyzing', Env.quote_str(item.path))
     Command(GHDL_PATH) \
         .args(['-a', '--ieee=synopsys', '--std='+args.std, '--work='+str(item.lib), item.path]) \
         .spawn() \
@@ -142,7 +130,7 @@ if BENCH is None:
 VCD_FILE = str(BENCH)+'.vcd'
 
 # run simulation
-print("info: Starting VHDL simulation for testbench", quote_str(BENCH), "...")
+print("info: Starting VHDL simulation for testbench", Env.quote_str(BENCH), "...")
 status: Status = Command(GHDL_PATH) \
     .args(['-r', '--ieee=synopsys', BENCH, '--vcd='+VCD_FILE, severity_arg]) \
     .args(['-g' + item.to_str() for item in generics]) \
