@@ -152,7 +152,7 @@ class Command:
     
 
     def spawn(self, verbose: bool=False) -> Status:
-        job = Env.quote_str(self._command)
+        job = self._command
         for c in self._args:
             job = job + ' ' + Env.quote_str(c)
         if verbose == True:
@@ -165,9 +165,9 @@ class Command:
         job = [self._command] + self._args
         # display the command being executed
         if verbose == True:
-            command_line = ''
-            for c in job:
-                command_line = command_line + ' ' + Env.quote_str(c)
+            command_line = self._command
+            for c in self._args:
+                command_line += ' ' + Env.quote_str(c)
             print('info:', command_line)
         # execute the command and capture channels for stdout and stderr
         try:

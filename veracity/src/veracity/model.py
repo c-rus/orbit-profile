@@ -15,13 +15,14 @@ class Mode(_Enum):
 
 class Signal:
 
-    def __init__(self, mode: Mode=Mode.LOCAL, width: int=None, value: int=0, downto: _Tuple[str, str]=None, to: _Tuple[str, str]=None):
+    def __init__(self, mode: Mode=Mode.LOCAL, width: int=None, value=0, downto: _Tuple[str, str]=None, to: _Tuple[str, str]=None):
         self._mode = mode
         self._is_single = True if width == None else False
         self._width = width if width != None else 1
         if self._width <= 0:
             print('WARNING: Signal cannot have width less than or equal to 0')
-        self._value = value
+        self._value = 0
+        self.set(value)
         # store values for writing the VHDL record
         self._downto = downto
         self._to = to
@@ -122,7 +123,23 @@ class Signal:
 
     def __hash__(self):
         return hash(self.__key())
+
+
+    def __getitem__(self, key: int) -> str:
+        return self.as_logic()[self.width()-key-1]
     
+
+    def __setitem__(self, key: int, value: str):
+        vec = self.as_logic()
+        result = ''
+        for i, bit in enumerate(vec):
+            if self.width()-key-1 == i:
+                result += value
+            else:
+                result += bit
+        self.set(result)
+        pass
+
     pass
 
 
@@ -404,4 +421,32 @@ class OutputFile:
             bfm.send(self._file, mode=Mode.OUTPUT)
         else:
             print('WARNING: Tried to write invalid type to output test vector file')
+    pass
+
+
+# --- Tests --------------------------------------------------------------------
+import unittest as _ut
+
+class __Test(_ut.TestCase):
+
+    def test_bit_access(self):
+        s = Signal(width=4, value="1010")
+
+        self.assertEqual('1', s[1])
+        self.assertEqual('0', s[0])
+        self.assertEqual('1', s[3])
+        
+        pass
+
+    def test_bit_modify(self):
+        s = Signal(width=4, value="1010")
+        self.assertEqual('0', s[0])
+        s[0] = '1'
+        self.assertEqual('1', s[0])
+
+        self.assertEqual('1', s[3])
+        s[3] = '0'
+        self.assertEqual('0', s[3])
+        pass
+
     pass

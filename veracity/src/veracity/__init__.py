@@ -1,7 +1,7 @@
 __all__ = ["coverage", "model"]
 
-import unittest as _ut
 import math as _math
+from typing import List as _List
 
 # --- Classes and Functions ----------------------------------------------------
 
@@ -214,7 +214,7 @@ def get_seed(default: int=None) -> int:
     return args.seed if args.seed is not None else __seed
 
 
-def interp_vhdl_bool(s: str) -> bool:
+def from_vhdl_bool(s: str) -> bool:
     '''
     Interprets a string `s` encoded as a vhdl boolean datatype and casts it
     to a Python `bool`.
@@ -222,7 +222,7 @@ def interp_vhdl_bool(s: str) -> bool:
     return s.lower() == 'true'
 
 
-def interp_vhdl_opt(s: str) -> bool:
+def from_vhdl_opt(s: str) -> bool:
     '''
     Interprets a string `s` encoded as a vhdl option datatype and casts it
     to a Python `bool`.
@@ -230,7 +230,50 @@ def interp_vhdl_opt(s: str) -> bool:
     return s.lower() == 'enable'
 
 
+def from_vhdl_ints(s: str) -> _List[int]:
+    '''
+    Interprets an array of integers from vhdl into a list of `int` in Python.
+    '''
+    # remove the leading and closing brackets
+    inner = s[1:len(s)-1]
+    # split on the comma
+    elements = inner.split(',')
+    result = [0] * len(elements)
+    # cast each element to an int
+    for i, x in enumerate(elements):
+        # handle positional assignment
+        if x.count('=>') > 0:
+            sub_x = x.split('=>', 2)
+            result[int(sub_x[0])] = int(sub_x[1])
+        else:
+            result[i] = int(x)
+
+    return result
+
+
+def from_vhdl_bools(s: str) -> _List[bool]:
+    '''
+    Interprets an array of booleans from vhdl into a list of `bool` in Python.
+    '''
+    # remove the leading and closing brackets
+    inner = s[1:len(s)-1]
+    # split on the comma
+    elements = inner.split(',')
+    result = [False] * len(elements)
+    # cast each element to an bool
+    for i, x in enumerate(elements):
+        # handle positional assignment
+        if x.count('=>') > 0:
+            sub_x = x.split('=>', 2)
+            result[int(sub_x[0])] = from_vhdl_bool(sub_x[1])
+        else:
+            result[i] = from_vhdl_bool(x)
+
+    return result
+
+
 # --- Tests --------------------------------------------------------------------
+import unittest as _ut
 
 class __Test(_ut.TestCase):
 
