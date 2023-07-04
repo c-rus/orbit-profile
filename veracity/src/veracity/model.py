@@ -110,6 +110,39 @@ class Signal:
         else:
             print('WARNING: Invalid type attempting to set signal value')
 
+    
+    def set_bit(self, index: int, bit, downto: bool=True):
+        '''
+        Modify the bit at `index` in the vector. 
+        
+        Setting `downto` to false will count the vector from left to right, 
+        0 to len-1. Setting `downto` to true will the count the vector right 
+        to left.
+        '''
+        diff: int = 2*index if downto == False else self.width()-1
+        bit: str = '1' if int(bit) == 1 else '0'
+
+        result = ''
+        for i, elem in enumerate(self.as_logic()):
+            if diff-index == i:
+                result += bit
+            else:
+                result += elem
+        self.set(result)
+        pass
+
+
+    def get_bit(self, index: int, downto: bool=True) -> str:
+        '''
+        Access the bit at `index` in the vector.
+
+        Setting `downto` to false will count the vector from left to right, 
+        0 to len-1. Setting `downto` to true will the count the vector right 
+        to left.
+        '''
+        diff: int = 2*index if downto == False else self.width()-1
+        return self.as_logic()[diff-index]
+        
 
     def __eq__(self, other):
         if isinstance(other, Signal):
@@ -130,9 +163,8 @@ class Signal:
     
 
     def __setitem__(self, key: int, value: str):
-        vec = self.as_logic()
         result = ''
-        for i, bit in enumerate(vec):
+        for i, bit in enumerate(self.as_logic()):
             if self.width()-key-1 == i:
                 result += value
             else:
@@ -448,5 +480,33 @@ class __Test(_ut.TestCase):
         s[3] = '0'
         self.assertEqual('0', s[3])
         pass
+    
 
+    def test_set_bit(self):
+        s = Signal(width=4, value="0000")
+        s.set_bit(0, '1')
+        self.assertEqual('1', s.as_logic()[3])
+        s.set_bit(3, '1')
+        self.assertEqual('1', s.as_logic()[0])
+
+        s = Signal(width=4, value="0000")
+        s.set_bit(0, '1', downto=False)
+        self.assertEqual('1', s.as_logic()[0])
+        s.set_bit(3, '1', downto=False)
+        self.assertEqual('1', s.as_logic()[3])
+        pass
+
+    def test_get_bit(self):
+        s = Signal(width=4, value="0010")
+        self.assertEqual('1', s.get_bit(1, downto=True))
+        self.assertEqual('1', s.get_bit(2, downto=False))
+
+        s = Signal(width=4, value="1000")
+        self.assertEqual('1', s.get_bit(3, downto=True))
+        self.assertEqual('1', s.get_bit(0, downto=False))
+
+        s = Signal(width=5, value="11110")
+        self.assertEqual('0', s.get_bit(0, downto=True))
+        self.assertEqual('0', s.get_bit(4, downto=False))
+        pass
     pass

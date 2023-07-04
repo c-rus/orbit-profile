@@ -89,10 +89,12 @@ class Coverage(_ABC):
         # force the simulation to pass if enough checks are evaluated
         if timeout > 0 and Coverage._counter >= timeout:
             return True        
-        Coverage._counter += 1
+        # check every cover-node
         cov: Coverage
         for cov in Coverage._group:
             if cov.skipped() == False and cov.passed() == False:
+                # increment the counter
+                Coverage._counter += 1
                 return False
         return True
 
