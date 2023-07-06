@@ -1,5 +1,5 @@
 [project]
-name = "veracity"
+name = "verity"
 description = "HDL verification library for software models"
 version = "1.0.0"
 requires-python = ">=3.7"

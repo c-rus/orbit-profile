@@ -1,6 +1,6 @@
 # `orbit-profile`
 
-### A collection of configurations, plugins, and templates for integration with [Orbit](https://github.com/c-rus/orbit).
+### A collection of configurations and plugins for integration with [Orbit](https://github.com/c-rus/orbit).
   
 ## Installing
 
@@ -16,9 +16,9 @@ Link the profile's configuration file to your home configuration:
 orbit config --append include="profile/c-rus/config.toml"
 ```
 
-__Optional:__ Install the Python implementation of `veracity` - a verification library for assisting in simulating HDL designs:
+__Optional:__ Install the Python implementation of `verity` - a verification library for assisting in simulating HDL designs:
 ```
-pip install -e "$(orbit env ORBIT_HOME)/profile/c-rus/veracity"
+pip install -e "$(orbit env ORBIT_HOME)/profile/c-rus/verity"
 ```
 
 ## Updating
@@ -43,18 +43,4 @@ To view details about a plugin:
 
 ```
 orbit plan --plugin <alias> --list
-```
-
-### Templates
-
-To view available templates:
-
-```
-orbit new --list
-```
-
-To view available files for importing from a template:
-
-```
-orbit new --template <alias> --list
 ```
