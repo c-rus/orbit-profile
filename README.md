@@ -7,18 +7,24 @@
 Download the profile:
 
 ```
-git clone https://github.com/c-rus/orbit-profile.git "$(orbit env ORBIT_HOME)/profile/c-rus"
+git clone https://github.com/c-rus/orbit-profile.git "$(orbit env ORBIT_HOME)/profiles/c-rus"
 ```
 
 Link the profile's configuration file to your home configuration:
 
 ```
-orbit config --append include="profile/c-rus/config.toml"
+orbit config --append include="profiles/c-rus/config.toml"
 ```
 
 __Optional:__ Install the Python implementation of `verity` - a verification library for assisting in simulating HDL designs:
 ```
-pip install -e "$(orbit env ORBIT_HOME)/profile/c-rus/verity"
+pip install -e "$(orbit env ORBIT_HOME)/profiles/c-rus/verity"
+```
+
+> __Note:__ Some plugins may require the `toml` Python package to be installed.
+
+```
+pip install toml
 ```
 
 ## Updating
@@ -26,7 +32,7 @@ pip install -e "$(orbit env ORBIT_HOME)/profile/c-rus/verity"
 Receive the latest changes:
 
 ```
-git -C "$(orbit env ORBIT_HOME)/profile/c-rus" pull
+git -C "$(orbit env ORBIT_HOME)/profiles/c-rus" pull
 ```
 
 ## Viewing
