@@ -133,9 +133,9 @@ if BYPASS_FAILURE == False:
 
 # post-simulation hook: analyze outcomes
 if USE_VERITI == True:
-    print("info: Interpreting results ...")
+    print("info: Computing results ...")
     print()
-    rc = 0 if veriti.log.check('results.log', None) == True else 101
+    rc = 0 if veriti.log.check('events.log', None) == True else 101
     exit(rc)
 else:
     print('info: Simulation complete')
