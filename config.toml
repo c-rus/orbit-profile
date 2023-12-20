@@ -100,8 +100,8 @@ Options:
     --help, -h                      show help message and exit
     --view                          open the vcd file in a waveform viewer
     --lint                          run static analysis and exit
-    --code                          print VHDL glue logic code for Python model
     --seed [num]                    set the randomness seed
+    --enable-veriti <value>         enable/disable python library 'veriti'
     --generic, -g <key>=<value>     override top-level VHDL generics
     --std <edition>                 specify the VHDL edition (87, 93, 02, 08, 19)
 

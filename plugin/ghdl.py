@@ -37,20 +37,24 @@ VCD_VIEWER: str = Env.read("ORBIT_ENV_VCD_VIEWER")
 # --- Define command-line arguments --------------------------------------------
 
 # arguments
-GLUE_LOGIC = '--code'
 RAND_SEED = '--seed'
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 
 parser.add_argument('--view', action='store_true', default=False, help='open the vcd file in a waveform viewer')
 parser.add_argument('--lint', action='store_true', default=False, help='run static analysis and exit')
-parser.add_argument(GLUE_LOGIC, action='store_true', default=False, help='print VHDL glue logic code for Python model')
 parser.add_argument(RAND_SEED, action='store', type=int, nargs='?', default=None, const=None, metavar='num', help='set the randomness seed')
 parser.add_argument('--generic', '-g', action='append', type=Generic.from_arg, default=[], metavar='key=value', help='override top-level VHDL generics')
 parser.add_argument('--std', action='store', default='93', metavar='edition', help="specify the VHDL edition (87, 93, 02, 08, 19)")
+parser.add_argument('--enable-veriti', default=0, metavar='ENABLE', help="toggle the usage of veriti verification library")
 
 args = parser.parse_args()
 
+USE_VERITI = bool(args.enable_veriti)
+# import and use the veriti library
+if USE_VERITI == True:
+    import veriti
+    
 set_seed: bool = sys.argv.count(RAND_SEED) > 0
 generics: List[Generic] = args.generic
 
@@ -76,25 +80,11 @@ for rule in Blueprint().parse():
 os.makedirs(SIM_DIR, exist_ok=True)
 os.chdir(SIM_DIR)
 
-# only display glue logic code if requested and exit
-if py_model is not None and args.code == True:
-    print("info: Writing Python software model glue logic for VHDL testbench ...")
-
-    Command(PYTHON_PATH) \
-        .arg(py_model) \
-        .args(['-g=' + item.to_str() for item in generics]) \
-        .arg(GLUE_LOGIC if args.code == True else None) \
-        .arg(RAND_SEED if set_seed == True else None) \
-        .arg(args.seed) \
-        .spawn() \
-        .unwrap()
-    exit(0)
-
 # analyze units
 print("info: Analyzing HDL source code ...")
 item: Hdl
 for item in rtl_order:
-    print('   * Analyzing', Env.quote_str(item.path))
+    print('  -', Env.quote_str(item.path))
     Command(GHDL_PATH) \
         .args(['-a', '--ieee=synopsys', '--std='+args.std, '--work='+str(item.lib), item.path]) \
         .spawn() \
@@ -113,7 +103,6 @@ if py_model != None:
     Command(PYTHON_PATH) \
         .arg(py_model) \
         .args(['-g=' + item.to_str() for item in generics]) \
-        .arg(GLUE_LOGIC if args.code == True else None) \
         .arg(RAND_SEED if set_seed == True else None) \
         .arg(args.seed) \
         .spawn() \
@@ -141,6 +130,15 @@ status: Status = Command(GHDL_PATH) \
 
 if BYPASS_FAILURE == False:
     status.unwrap()
+
+# post-simulation hook: analyze outcomes
+if USE_VERITI == True:
+    print("info: Interpreting results ...")
+    print()
+    rc = 0 if veriti.log.check('results.log', None) == True else 101
+    exit(rc)
+else:
+    print('info: Simulation complete')
 
 # open the vcd file
 if(VCD_VIEWER != None and args.view == True):
