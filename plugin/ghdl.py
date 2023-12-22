@@ -114,9 +114,13 @@ if USE_VERITI == True and py_model != None:
     veriti.set(design_if=design_if, bench_if=bench_if, work_dir='.', generics=generics, seed=args.seed)
 
 if RUN_MODEL == True and py_model != None:
-    import runpy
+    import runpy, sys, os
+    # switch the sys.path[0] from this script's path to the model's path
+    this_script_path = sys.path[0]
+    sys.path[0] = os.path.dirname(py_model)
     # run the python model script in its own namespace
     runpy.run_path(py_model, init_globals={})
+    sys.path[0] = this_script_path
     pass
 
 BYPASS_FAILURE = VCD_VIEWER is not None
