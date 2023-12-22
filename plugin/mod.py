@@ -31,6 +31,11 @@ class Env:
     
 
     @staticmethod
+    def write(key: str, value: str):
+        os.environ[key] = str(value)
+
+
+    @staticmethod
     def add_path(path: str) -> bool:
         if path is not None and os.path.exists(path) and path not in os.getenv("PATH"):
             os.environ["PATH"] += os.pathsep + path

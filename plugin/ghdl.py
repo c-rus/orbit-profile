@@ -16,7 +16,7 @@
 ##!     [1] https://github.com/ghdl/ghdl
 
 import os, sys
-import argparse
+import argparse, random
 from typing import List
 
 from mod import Command, Status, Env, Generic, Blueprint, Hdl
@@ -37,25 +37,25 @@ VCD_VIEWER: str = Env.read("ORBIT_ENV_VCD_VIEWER")
 # --- Define command-line arguments --------------------------------------------
 
 # arguments
-RAND_SEED = '--seed'
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 
 parser.add_argument('--view', action='store_true', default=False, help='open the vcd file in a waveform viewer')
 parser.add_argument('--lint', action='store_true', default=False, help='run static analysis and exit')
-parser.add_argument(RAND_SEED, action='store', type=int, nargs='?', default=None, const=None, metavar='num', help='set the randomness seed')
+parser.add_argument('--seed', action='store', type=int, nargs='?', default=None, const=random.randrange(sys.maxsize), metavar='NUM', help='set the randomness seed')
 parser.add_argument('--generic', '-g', action='append', type=Generic.from_arg, default=[], metavar='key=value', help='override top-level VHDL generics')
 parser.add_argument('--std', action='store', default='93', metavar='edition', help="specify the VHDL edition (87, 93, 02, 08, 19)")
-parser.add_argument('--enable-veriti', default=0, metavar='ENABLE', help="toggle the usage of veriti verification library")
+parser.add_argument('--enable-veriti', default=1, metavar='ENABLE', help="toggle the usage of veriti verification library")
+parser.add_argument('--run-model', default=1, metavar='ENABLE', help="toggle the generation of test vectors")
+args, unknown = parser.parse_known_args()
 
-args = parser.parse_args()
-
-USE_VERITI = bool(args.enable_veriti)
+USE_VERITI = int(args.enable_veriti) != 0
+RUN_MODEL = int(args.run_model) != 0
 # import and use the veriti library
 if USE_VERITI == True:
     import veriti
-    
-set_seed: bool = sys.argv.count(RAND_SEED) > 0
+    pass
+
 generics: List[Generic] = args.generic
 
 # --- Collect data from the blueprint ------------------------------------------
@@ -96,17 +96,24 @@ if args.lint == True:
     print("info: Static analysis complete")
     exit(0)
 
-# pre-simulation hook: generate test vectors
-if py_model != None:
-    print("info: Running Python software model ...")
 
-    Command(PYTHON_PATH) \
-        .arg(py_model) \
-        .args(['-g=' + item.to_str() for item in generics]) \
-        .arg(RAND_SEED if set_seed == True else None) \
-        .arg(args.seed) \
-        .spawn() \
-        .unwrap()
+# pre-simulation hook: generate test vectors
+if USE_VERITI == True and RUN_MODEL == True and py_model != None:
+    import veriti, runpy
+
+    ORBIT_BENCH = Env.read("ORBIT_BENCH", missing_ok=False)
+    ORBIT_TOP = Env.read("ORBIT_TOP", missing_ok=False)
+
+    # export the interfaces using orbit to get the json data format
+    design_if = Command("orbit").arg("get").arg(ORBIT_TOP).arg("--json").output()[0]
+    bench_if = Command("orbit").arg("get").arg(ORBIT_BENCH).arg("--json").output()[0]
+    
+    print("info: Running Python software model ...")
+    
+    # prepare the proper context
+    veriti.set(design_if=design_if, bench_if=bench_if, work_dir='.', generics=generics, seed=args.seed)
+    # run the python model script in its own namespace
+    runpy.run_path(py_model, init_globals={})
     pass
 
 BYPASS_FAILURE = VCD_VIEWER is not None
@@ -126,7 +133,7 @@ print("info: Starting VHDL simulation for testbench", Env.quote_str(BENCH), "...
 status: Status = Command(GHDL_PATH) \
     .args(['-r', '--ieee=synopsys', BENCH, '--vcd='+VCD_FILE, severity_arg]) \
     .args(['-g' + item.to_str() for item in generics]) \
-    .spawn()
+    .spawn(verbose=False)
 
 if BYPASS_FAILURE == False:
     status.unwrap()
