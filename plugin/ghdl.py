@@ -111,7 +111,7 @@ if USE_VERITI == True and py_model != None:
     print("info: Running Python software model ...")
     
     # prepare the proper context
-    veriti.set(design_if=design_if, bench_if=bench_if, work_dir='.', generics=generics, seed=args.seed)
+    veriti.config.set(design_if=design_if, bench_if=bench_if, work_dir='.', generics=generics, seed=args.seed)
 
 if RUN_MODEL == True and py_model != None:
     import runpy, sys, os
