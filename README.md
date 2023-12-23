@@ -4,49 +4,29 @@
   
 ## Installing
 
-Download the profile:
+1. Download the profile:
 
 ```
-git clone https://github.com/c-rus/orbit-profile.git "$(orbit env ORBIT_HOME)/profiles/c-rus"
+git clone https://github.com/c-rus/orbit-profile.git "$(orbit env ORBIT_HOME)/profiles/crus"
 ```
 
-Link the profile's configuration file to your home configuration:
-
+2. Install the required python packages:
 ```
-orbit config --append include="profiles/c-rus/config.toml"
-```
-
-__Optional:__ Install the Python implementation of `verity` - a verification library for assisting in simulating HDL designs:
-```
-pip install -e "$(orbit env ORBIT_HOME)/profiles/c-rus/verity"
+pip install -r "$(orbit env ORBIT_HOME)/profiles/crus/requirements.txt"
 ```
 
-> __Note:__ Some plugins may require the `toml` Python package to be installed.
+3. Link the profile's configuration file to your home configuration:
 
 ```
-pip install toml
+orbit config --append include="profiles/crus/config.toml"
 ```
+
+4. (__Optional__) Install the Python implementation of `veriti` - a verification library for assisting in simulating HDL designs. Follow the instruction [here](https://github.com/c-rus/veriti.git#installing). This package is used in some plugin workflows.
 
 ## Updating
 
-Receive the latest changes:
+To receive the latest changes:
 
 ```
-git -C "$(orbit env ORBIT_HOME)/profiles/c-rus" pull
-```
-
-## Viewing
-
-### Plugins
-
-To view available plugins:
-
-```
-orbit plan --list
-```
-
-To view details about a plugin:
-
-```
-orbit plan --plugin <alias> --list
+git -C "$(orbit env ORBIT_HOME)/profiles/crus" pull
 ```

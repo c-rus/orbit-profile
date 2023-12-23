@@ -1,14 +1,20 @@
+[env]
+github-user = "c-rus"
+
+
 [[protocol]]
 name = "zip-op"
 summary = "Example protocol for handling zip file urls"
 command = "python"
 args = ["./protocol/download.py"]
 
+
 [[protocol]]
 name = "git-op2"
 summary = "Accesses packages through git to handle remote repositories."
 command = "git"
 args = ["clone", "-b", "{{ orbit.ip.version }}", "{{ orbit.ip.source.url }}", "{{ orbit.queue }}/{{ orbit.ip.name }}"]
+
 
 [[protocol]]
 name = "git-op"
@@ -28,17 +34,16 @@ Dependencies:
     Git (tested: 2.36.0)
 """
 
+
 [[protocol]]
 name = "priv-zip-op"
 command = "curl"
-args = ["-u", "{{orbit.env.github.user}}", "-L", "{{orbit.ip.source.url}}", "--output-dir", "{{orbit.queue}}"]
 # curl -u <USER> -L -o <FILENAME> https://github.com/<USER>/<REPO>/archive/master.zip
+args = ["-u", "{{orbit.env.github_user}}", "-L", "{{orbit.ip.source.url}}", "--output-dir", "{{orbit.queue}}"]
 
-[env]
-GITHUB_USER = "c-rus"
 
 [[plugin]]
-alias = "quartus"
+name = "quartus"
 summary = "Complete toolflow for Intel Quartus Prime backend program"
 command = "python"
 args = ["./plugin/quartus.py"]
@@ -77,7 +82,7 @@ Dependencies:
 
 
 [[plugin]]
-alias   = "ghdl"
+name   = "ghdl"
 summary = "Backend script for simulating VHDL with GHDL"
 command = "python"
 args    = ["./plugin/ghdl.py"]
@@ -102,6 +107,7 @@ Options:
     --lint                          run static analysis and exit
     --seed [num]                    set the randomness seed
     --enable-veriti <value>         enable/disable python library 'veriti'
+    --run-model <value>             enable/disable running pre-sim script
     --generic, -g <key>=<value>     override top-level VHDL generics
     --std <edition>                 specify the VHDL edition (87, 93, 02, 08, 19)
 
@@ -116,7 +122,7 @@ Dependencies:
 
 
 [[plugin]]
-alias = "msim"
+name = "msim"
 summary = "Backend script for simulating HDL with ModelSim"
 command = "python"
 args    = ["./plugin/modelsim.py"]
@@ -153,7 +159,7 @@ Dependencies:
 
 
 [[plugin]]
-alias   = "viv-no-xpr"
+name   = "viv-no-xpr"
 summary = "Backend Vivado non-project mode toolflow"
 command = "vivado"
 args    = ["-mode", "batch", "-nojournal", "-nolog", "-source", "./plugin/viv-no-xpr.tcl", "-tclargs"]
@@ -199,7 +205,7 @@ Examples:
 
 
 [[plugin]]
-alias = "viv-xpr"
+name = "viv-xpr"
 summary = "Backend Vivado project mode toolflow"
 command = "vivado"
 args = ["-mode", "batch", "-nojournal", "-nolog", "-source", "./plugin/viv-xpr.tcl", "-tclargs"]
@@ -225,7 +231,7 @@ Dependencies:
 
 
 [[plugin]]
-alias = "zipr"
+name = "zipr"
 summary = "Compress files into a submission-like format"
 command = "python"
 args = ["./plugin/zipr.py"]
@@ -251,7 +257,7 @@ Dependencies:
 
 
 [[plugin]]
-alias = "xsim"
+name = "xsim"
 summary = "Perform simulation with Vivado's simulator"
 command = "python"
 args = ["./plugin/xsim.py"]
