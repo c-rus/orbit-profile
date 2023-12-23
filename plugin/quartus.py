@@ -1,34 +1,25 @@
-##! File        : quartus.py
-##! Engineer    : Chase Ruskin
-##!
-##! Modified    : 2023-06-30
-##! Created     : 2021-08-30
-##!
-##! Details     :
-##!   Creates a Quartus project to execute any stage of the FPGA toolchain
-##!   workflow. This script has the ability to override the top-level generics
-##!   through the writing of a TCL script to eventually get called by Quartus.
-##!
-##!   The script can auto-detect an Intel FPGA connected to the PC to program
-##!   with a .pof or .sof bitstream file.
-##!   
-##! References  :
-##!   [1] https://www.intel.co.jp/content/dam/altera-www/global/ja_JP/pdfs/literature/an/an312.pdf
-##!   [2] https://community.intel.com/t5/Intel-Quartus-Prime-Software/Passing-parameter-generic-to-the-top-level-in-Quartus-tcl/td-p/239039
+# Project: orbit-profile
+# Script: quartus.py
+#
+# Creates a Quartus project to execute any stage of the FPGA toolchain
+# workflow. This script has the ability to override the top-level generics
+# through the writing of a TCL script to eventually get called by Quartus.
+#
+# The script can auto-detect an Intel FPGA connected to the PC to program
+# with a .pof or .sof bitstream file.
+#
+# [1] https://www.intel.co.jp/content/dam/altera-www/global/ja_JP/pdfs/literature/an/an312.pdf
+# [2] https://community.intel.com/t5/Intel-Quartus-Prime-Software/Passing-parameter-generic-to-the-top-level-in-Quartus-tcl/td-p/239039
 
-import os
 from typing import List
+import os
 import argparse
-
 import toml
 
 from mod import Command, Env, Generic, Blueprint, Hdl
 
-# --- Constants ----------------------------------------------------------------
-
-# read environment variable from orbit config.toml
-QUARTUS_PATH = Env.read("ORBIT_ENV_QUARTUS_PATH", missing_ok=True)
 # temporarily appends quartus installation path to PATH env variable
+QUARTUS_PATH = Env.read("ORBIT_ENV_QUARTUS_PATH", missing_ok=True)
 Env.add_path(QUARTUS_PATH)
 
 # device selected here is read from .board file
@@ -39,7 +30,7 @@ DEVICE = None
 PROJECT = Env.read("ORBIT_IP_NAME", default="untitled")
 
 # the directory to hold all plugin-related files
-PROJECT_DIR = 'quartus'
+PROJECT_DIR = 'quartz'
 
 # the script that is made within this file and then executed by quartus
 TCL_SCRIPT = "orbit.tcl"
@@ -47,7 +38,7 @@ TCL_SCRIPT = "orbit.tcl"
 # will be overridden when programming to board with auto-detection by quartus
 CABLE = "USB-Blaster"
 
-# --- Classes/Functions --------------------------------------------------------
+## Classes/Functions
 
 class Tcl:
     def __init__(self, path: str):
@@ -55,36 +46,36 @@ class Tcl:
         self._contents = ''
         pass
 
-
     def append(self, code: str, end='\n'):
         self._contents += code + end
-
 
     def save(self):
         with open(self._file, 'w') as f:
             f.write(self._contents)
-
 
     def get_script(self) -> str:
         return self._file
     
     pass
 
-# --- Handle command-line arguments --------------------------------------------
+## Handle command-line arguments
 
-parser = argparse.ArgumentParser(allow_abbrev=False)
+parser = argparse.ArgumentParser(prog='quartz', allow_abbrev=False)
 
-parser.add_argument("--pgm-soft", action="store_true", default=False, help="program with temporary bitfile")
-parser.add_argument("--pgm-hard", action="store_true", default=False, help="program with permanent bitfile")
+parser.add_argument("--synth", action="store_true", default=False, help="execute analysize and synthesis")
+parser.add_argument("--route", action="store_true", default=False, help="execute place and route")
+parser.add_argument("--sta", action="store_true", default=False, help="execute static timing analysis")
+parser.add_argument("--bit", action="store_true", default=False, help="generate bitstream file")
+
 parser.add_argument("--open", action="store_true", default=False, help="open quartus project in gui")
 parser.add_argument("--include-sim", action="store_true", default=False, help="add simulation files to project")
 parser.add_argument("--compile", action="store_true", default=False, help="full toolflow")
-parser.add_argument("--synth", action="store_true", default=False, help="execute analysize and synthesis")
-parser.add_argument("--route", action="store_true", default=False, help="execute place and route")
-parser.add_argument("--bit", action="store_true", default=False, help="generate bitstream file")
-parser.add_argument("--sta", action="store_true", default=False, help="execute static timing analysis")
-parser.add_argument("--board", action="store", default=None, type=str, help="board configuration file name")
 parser.add_argument("--eda-netlist", action="store_true", default=False, help="generate eda timing netlist")
+
+parser.add_argument("--board", action="store", default=None, type=str, help="board configuration file name")
+parser.add_argument("--prog-sram", action="store_true", default=False, help="program with temporary bitfile")
+parser.add_argument("--prog-flash", action="store_true", default=False, help="program with permanent bitfile")
+
 parser.add_argument('--generic', '-g', action='append', type=Generic.from_arg, default=[], metavar='key=value', help='override top-level VHDL generics')
 
 args = parser.parse_args()
@@ -92,8 +83,8 @@ args = parser.parse_args()
 generics: List[Generic] = args.generic
 
 # determine if to program the FPGA board
-pgm_temporary = args.pgm_soft
-pgm_permanent = args.pgm_hard
+pgm_temporary = args.prog_sram
+pgm_permanent = args.prog_flash
 
 # determine if to open the quartus project in GUI
 open_project = args.open
@@ -128,7 +119,7 @@ else:
         DEVICE = "EPM2210F324I5"
     pass
 
-# --- Collect data from the blueprint ------------------------------------------
+## Collect data from the blueprint
 
 # enter the build directory
 BUILD_DIR = Env.read("ORBIT_BUILD_DIR", missing_ok=False)
@@ -143,7 +134,7 @@ bdf_files = []
 pin_assignments = []
 
 board_config = None
-
+# read/parse blueprint file
 for rule in Blueprint().parse():
     if rule.fileset == 'VHDL-RTL':
         vhdl_files += [Hdl(rule.identifier, rule.path)]
@@ -156,17 +147,20 @@ for rule in Blueprint().parse():
     elif rule.fileset == "BDF-FILE":
         bdf_files += [rule.path]
     elif rule.fileset == 'BOARD-CF':
-        if args.board is None:
+        if board_config == None and args.board is None:
             board_config = toml.load(rule.path)
-        elif rule.identifier == args.board:
+            print('info: Loaded board file:', rule.path)
+        # match filename with the filename provided on command-line
+        elif os.path.splitext(os.path.basename(rule.path))[0] == args.board:
             board_config = toml.load(rule.path)
+            print('info: Loaded board file:', rule.path)
         pass
     pass
 
 # verify we got a matching board file if specified from the command-line
 if board_config is None and args.board is not None:
     exit("error: Board file "+Env.quote_str(args.board)+" is not found in blueprint")
-
+    
 if board_config is not None:
     FAMILY = board_config["part"]["FAMILY"]
     DEVICE = board_config["part"]["DEVICE"]
@@ -174,9 +168,12 @@ if board_config is not None:
 top_unit = Env.read("ORBIT_TOP", missing_ok=False)
 
 if FAMILY == None:
-    exit("error: FPGA 'FAMILY' must be specified in .board file")
+    exit("error: FPGA 'FAMILY' must be specified in .board file's '[part]' table")
 if DEVICE == None:
-    exit("error: FPGA 'DEVICE' must be specified in .board file")
+    exit("error: FPGA 'DEVICE' must be specified in .board file's '[part]' table")
+# verify the board has pin assignments
+if 'pins' not in board_config.keys():
+    print("warning: No pin assignments found due to missing '[pins]' table in board file")
 
 # --- Process data -------------------------------------------------------------
 
@@ -233,14 +230,17 @@ tcl.append("set_global_assignment -name TOP_LEVEL_ENTITY "+Env.quote_str(top_uni
 # set generics for top level entity
 if len(generics) > 0:
     tcl.append('# Set generics for top level entity')
-generic: Generic
-for generic in generics:
-    tcl.append("set_parameter -name "+Env.quote_str(generic.key)+" "+Env.quote_str(str(generic.val)))
+    generic: Generic
+    for generic in generics:
+        tcl.append("set_parameter -name "+Env.quote_str(generic.key)+" "+Env.quote_str(str(generic.val)))
+    pass
 
 # set the pin assignments
-tcl.append('# Set the pin assignments')
-for (pin, port) in board_config['pins'].items():
-    tcl.append("set_location_assignment "+Env.quote_str(pin)+" -to "+Env.quote_str(port))
+if 'pins' in board_config.keys():
+    tcl.append('# Set the pin assignments')
+    for (pin, port) in board_config['pins'].items():
+        tcl.append("set_location_assignment "+Env.quote_str(pin)+" -to "+Env.quote_str(port))
+    pass
 
 # run a preset workflow
 if flow is not None:

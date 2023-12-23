@@ -1,238 +1,198 @@
-# ------------------------------------------------------------------------------
-# Script   : modelsim.py
-# Author   : Chase Ruskin
-# Modified : 2022-09-05
-# Created  : 2021-08-29
-# Details  :
-#   Use batch mode to run simulation in ModelSim.
-#
-# To unleash full capability, visit the modelsim reference guide: 
-# https://www.microsemi.com/document-portal/doc_view/131617-modelsim-reference-manual
-# ------------------------------------------------------------------------------
-import os,sys,shutil
+# Project: orbit-profile
+# Script: modelsim.py
+# 
+# Runs ModelSim in batch mode to perform HDL simulations.
+# 
+# [1] https://www.microsemi.com/document-portal/doc_view/131617-modelsim-reference-manual
+
+import os, sys, shutil, argparse, random
 from typing import List
 
-# --- constants ----------------------------------------------------------------
+from mod import Env, Generic, Command, Hdl, Blueprint
 
 SIM_DIR = "msim"
-# define python path
-PYTHON_PATH = os.path.basename(sys.executable)
 
 # temporarily append modelsim installation path to PATH env variable
-MODELSIM_PATH = os.environ.get("ORBIT_ENV_MODELSIM_PATH")
-if(MODELSIM_PATH != None and os.path.exists(MODELSIM_PATH) == True and MODELSIM_PATH not in os.getenv('PATH')):
-    os.environ['PATH'] = MODELSIM_PATH + ';' + os.getenv('PATH')
+MODELSIM_PATH = os.environ.get("ORBIT_ENV_MODELSIM_PATH", missing_ok=True)
+Env.add_path(MODELSIM_PATH)
 
 DO_FILE = 'orbit.do'
 WAVEFORM_FILE = 'vsim.wlf'
 
-# --- classes and functions ----------------------------------------------------
+## Handle command-line arguments
 
-class Generic:
-    def __init__(self, key: str, val: str):
-        self.key = key
-        self.val = val
-        pass
-    pass
+parser = argparse.ArgumentParser(prog='msim', allow_abbrev=False)
 
+parser.add_argument('--enable-veriti', default=0, metavar='BIT', help="toggle the usage of veriti verification library")
 
-    @classmethod
-    def from_str(self, s: str):
-        # split on equal sign
-        words = s.split('=', 1)
-        if len(words) != 2:
-            return None
-        return Generic(words[0], words[1])
+parser.add_argument('--lint', action='store_true', default=False, help='perform static code analysis and exit')
+parser.add_argument('--run-model', default=1, metavar='BIT', help="run the pre-simulation script")
+parser.add_argument('--run-sim', default=1, metaver='BIT', help='start process to run through simulation')
 
+parser.add_argument('--gui', action='store_true', default=False, help='open the gui')
+parser.add_argument('--review', action='store_true', default=False, help='review the previous simulation')
+parser.add_argument('--clean', action='store_true', default=False, help='remove previous simulation artifacts')
+parser.add_argument('--generic', '-g', action='append', type=Generic.from_arg, default=[], metavar='KEY=VALUE', help='override top-level VHDL generics')
+parser.add_argument('--seed', action='store', type=int, nargs='?', default=None, const=random.randrange(sys.maxsize), metavar='NUM', help='set the randomness seed')
 
-    def to_str(self) -> str:
-        return self.key+'='+self.val
-    pass
+parser.add_argument('--top-config', default=None, help='define the top-level configuration unit')
 
+args = parser.parse_args()
 
-def quote_str(s: str) -> str:
-    '''Wraps the string `s` around double quotes `\"` characters.'''
-    return '\"' + s + '\"'
+USE_VERITI = int(args.enable_veriti) != 0
+RUN_MODEL = int(args.run_model) != 0
 
+# import and use the veriti library
+if USE_VERITI == True:
+    import veriti
 
-def invoke(command: str, args: List[str], verbose: bool=False, exit_on_err: bool=True):
-    '''
-    Runs a subprocess calling `command` with a series of `args`.
-
-    Prints the command if `verbose` is `True`.
-    '''
-    code_line = command + ' '
-    for c in args:
-        code_line = code_line + quote_str(c) + ' '
-    rc = os.system(code_line)
-    if verbose == True:
-        print(code_line)
-    # immediately stop script upon a bad return code
-    if(rc != 0 and exit_on_err == True):
-        exit('ERROR: plugin exited with error code: '+str(rc))
-
-
-# --- Handle command-line arguments --------------------------------------------
-
-generics = []
-prev_arg = ''
+generics: List[Generic] = args.generic
 
 # testbench's VHDL configuration unit
-top_level_config = None
+top_level_config = args.top_config
 
-REVIEW = False
-OPEN_GUI = False
-INIT_ONLY = False
-LINT_ONLY = False
-SCRIPT_ONLY = False
-CLEAN = False
-# handle options
-for cur_arg in sys.argv[1:]:
-    if cur_arg == "--gui":
-        OPEN_GUI = True
-    elif cur_arg == '--review':
-        REVIEW = True
-    elif cur_arg == '--init':
-        INIT_ONLY = True
-    elif cur_arg == '--lint':
-        LINT_ONLY = True
-    elif cur_arg == '--clean':
-        CLEAN = True
-    elif cur_arg == '--script':
-        SCRIPT_ONLY = True
-    elif prev_arg == '--generic' or prev_arg == '-g':
-        gen = Generic.from_str(cur_arg)
-        if gen != None:
-            generics += [gen]
-        else:
-            exit('ERROR: Invalid generic entered as ' + cur_arg)
-        pass
-    elif prev_arg == '--config':
-        top_level_config = cur_arg
-        pass
-    prev_arg = cur_arg
-    pass
+REVIEW = args.review
+OPEN_GUI = args.gui
+SETUP_SIM_ONLY = int(args.run_sim) != 0
+LINT_ONLY = args.lint
+CLEAN = args.clean
 
 # open an existing waveform result
 if REVIEW == True:
     if os.path.exists(WAVEFORM_FILE) == True:
-        invoke('vsim', ['-view', WAVEFORM_FILE, '-do "add wave *;"'])
+        rc = Command('vsim').arg('-view').arg(WAVEFORM_FILE).arg('-do').arg("add wave *;").spawn()
+        rc.unwrap()
     else:
-        exit("ERROR: No .wlf exists to review")
+        exit("error: No .wlf exists to review")
 
-# --- process blueprint --------------------------------------------------------
+## Process blueprint
 
-# change directory to build
-os.chdir(os.getenv("ORBIT_BUILD_DIR"))
+# enter the build directory for the rest of the workflow
+BUILD_DIR = Env.read("ORBIT_BUILD_DIR", missing_ok=False)
+os.chdir(BUILD_DIR)
+
+tb_do_file: str = None
+py_model: str = None
+compile_order: List[Hdl] = []
+# collect data from the blueprint
+for rule in Blueprint().parse():
+    if rule.fileset == 'VHDL-RTL' or rule.fileset == 'VHDL-SIM':
+        compile_order += [Hdl(rule.identifier, rule.path)]
+    elif rule.fileset == 'PY-MODEL':
+        py_model = rule.path
+    # see if there is a do file to run for opening modelsim
+    elif rule.fileset == 'DO-FILE':
+        tb_do_file = rule.path
+        pass
+    pass
+
+# force remove directory if clean is enabled
+if CLEAN == True and os.path.exists(SIM_DIR) == True:
+    shutil.rmtree(SIM_DIR)
+
+# enter modelsim directory
+os.makedirs(SIM_DIR, exist_ok=True)
+os.chdir(SIM_DIR)
 
 # track what libraries we have seen
 libraries = []
 
-py_model = None
-tb_do_file = None
-# open the blueprint file
-with open(os.getenv("ORBIT_BLUEPRINT"), 'r') as blueprint:
-    # force remove directory if clean is enabled
-    if CLEAN == True and os.path.exists(SIM_DIR) == True:
-        shutil.rmtree(SIM_DIR)
-    # enter modelsim directory
-    os.makedirs(SIM_DIR, exist_ok=True)
-    os.chdir(SIM_DIR)
-
-    for rule in blueprint.readlines():
-        # split the rule by the spaces
-        fileset, library, path = rule.strip('\n').split('\t', maxsplit=3)
-        # compile external custom libraries
-        if(fileset == "VHDL-RTL" or fileset == "VHDL-SIM"):
-            # create new modelsim library folder and mapping
-            if(library not in libraries):
-                invoke('vlib', [library])
-                invoke('vmap', [library, library])
-                libraries.append(library)
-            # compile vhdl
-            invoke('vcom', ['-work', library, path])
-            pass
-        # compile verilog source files
-        elif(fileset == "VLOG-RTL" or fileset == "VLOG-SIM"):
-            # create new modelsim library folder and mapping
-            if(library not in libraries):
-                invoke('vlib', [library])
-                invoke('vmap', [library, library])
-                libraries.append(library)
-            # compile verilog
-            invoke('vlog', ['-work', library, path])
-            pass
-        # see if there is a python model script to run before running testbench
-        elif(fileset == "PY-MODEL"):
-            py_model = path
-            pass
-        # see if there is a do file to run for opening modelsim
-        elif(fileset == "DO-FILE"):
-            tb_do_file = path
-            pass
+print("info: Compiling HDL source code ...")
+item: Hdl
+for item in compile_order:
+    print('  -', Env.quote_str(item.path))
+    # create new libraries and their mappings
+    if item.lib not in libraries:
+        Command('vlib').arg(item.lib).spawn().unwrap()
+        Command('vmap').arg(item.lib).arg(item.lib).spawn().unwrap()
+        libraries.append(item.lib)
+    # compile VHDL
+    Command('vcom').arg('-work').arg(item.lib).arg(item.path).spawn().unwrap()
     pass
 
 if LINT_ONLY == True:
-    print("INFO: Static analysis complete")
-    exit()
+    print("info: Static analysis complete")
+    exit(0)
 
-BENCH = os.getenv("ORBIT_BENCH")
+# pre-simulation hook: generate test vectors
+if USE_VERITI == True and py_model != None:
+    import veriti
 
-if BENCH == None or len(BENCH) == 0:
-    exit("ERROR: No testbench set with $ORBIT_BENCH")
+    ORBIT_BENCH = Env.read("ORBIT_BENCH", missing_ok=False)
+    ORBIT_TOP = Env.read("ORBIT_TOP", missing_ok=False)
 
-# 1. pre-simulation hook: generate test vectors
-if py_model != None:
-    print("INFO: Running python software model ...")
-    # format generics for SW MODEL
-    py_generics = []
-    for item in generics:
-        py_generics += ['-g=' + item.to_str()]
-    invoke(PYTHON_PATH, [py_model] + py_generics)
+    # export the interfaces using orbit to get the json data format
+    design_if = Command("orbit").arg("get").arg(ORBIT_TOP).arg("--json").output()[0]
+    bench_if = Command("orbit").arg("get").arg(ORBIT_BENCH).arg("--json").output()[0]
+    
+    # prepare the proper context
+    veriti.config.set(design_if=design_if, bench_if=bench_if, work_dir='.', generics=generics, seed=args.seed)
     pass
 
-# only run the python script if script is only running
-if SCRIPT_ONLY == True:
-    exit()
+if RUN_MODEL == True and py_model != None:
+    import runpy, sys, os
+    # switch the sys.path[0] from this script's path to the model's path
+    this_script_path = sys.path[0]
+    sys.path[0] = os.path.dirname(py_model)
+    print("info: Running Python software model ...")
+    # run the python model script in its own namespace
+    runpy.run_path(py_model, init_globals={})
+    sys.path[0] = this_script_path
+    pass
+
+BENCH = Env.read("ORBIT_BENCH", missing_ok=True)
+
+if BENCH is None:
+    exit('error: No testbench to simulate\n\nUse \"--lint\" to only compile the HDL code or set a testbench to simulate')
 
 # 2. create a .do file to automate modelsim actions
-print("INFO: Generating .do file ...")
+print("info: Generating .do file ...")
 with open(DO_FILE, 'w') as file:
     # prepend .do file data
     if OPEN_GUI == True:
         # add custom waveform/vsim commands
-        if(tb_do_file != None):
+        if tb_do_file != None and os.path.exists(tb_do_file) == True:
+            print("info: Importing commands from .do file:", tb_do_file)
             with open(tb_do_file, 'r') as do:
                 for line in do.readlines():
                     # add all non-blank lines
-                    if(len(line.strip())):
+                    if len(line.strip()) > 0:
                         file.write(line)
                 pass
         # write default to include all signals into waveform
         else:
             file.write('add wave *\n')
             pass
-    if INIT_ONLY == False:
+    if SETUP_SIM_ONLY == False:
         file.write('run -all\n')
     if OPEN_GUI == False:
         file.write('quit\n')
     pass
 
-# run simulation with this top-level testbench
+## Run simulation with top-level testbench
 
 # determine to run as script or as gui
-mode = "-batch"
-if OPEN_GUI == True:
-    mode = "-gui"
-
-# format any generics for vsim command-line
-for i in range(len(generics)):
-    generics[i] = '-g'+generics[i].to_str()
+mode = "-batch" if OPEN_GUI == False else "-gui"
 
 # override bench with top-level config
-if top_level_config != None:
-    BENCH = top_level_config
+BENCH = top_level_config if top_level_config != None else BENCH
 
-# 3. run vsim
-print("INFO: Invoking modelsim ...")
-invoke('vsim', [mode, '-onfinish', 'stop', '-do', DO_FILE, '-wlf', WAVEFORM_FILE, BENCH] + generics)
+# run simulation with vsim
+print("info: Starting VHDL simulation for testbench", Env.quote_str(BENCH), "...")
+Command('vsim') \
+    .arg(mode) \
+    .arg('-onfinish').arg('stop') \
+    .arg('-do').arg(DO_FILE) \
+    .arg('-wlf').arg(WAVEFORM_FILE) \
+    .arg(BENCH) \
+    .args(['-g' + item.to_str() for item in generics]) \
+    .spawn().unwrap()
+
+# post-simulation hook: analyze outcomes
+if USE_VERITI == True:
+    print("info: Computing results ...")
+    print()
+    rc = 0 if veriti.log.check('events.log', None) == True else 101
+    exit(rc)
+else:
+    print('info: Simulation complete')

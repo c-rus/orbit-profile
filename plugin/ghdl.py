@@ -19,14 +19,16 @@ from mod import Command, Status, Env, Generic, Blueprint, Hdl
 # directory to store artifacts within build directory
 SIM_DIR = 'gsim'
 
-# define ghdl path
-GHDL_PATH: str = Env.read("ORBIT_ENV_GHDL_PATH", default='ghdl')
+# temporarily append ghdl path to PATH env variable
+GHDL_PATH: str = Env.read("ORBIT_ENV_GHDL_PATH", missing_ok=True)
+Env.add_path(GHDL_PATH)
+
 # define a vcd viewer
 VCD_VIEWER: str = Env.read("ORBIT_ENV_VCD_VIEWER")
 
 ## Handle command-line arguments
 
-parser = argparse.ArgumentParser(allow_abbrev=False)
+parser = argparse.ArgumentParser(prog='gsim', allow_abbrev=False)
 
 parser.add_argument('--view', action='store_true', default=False, help='open the vcd file in a waveform viewer')
 parser.add_argument('--lint', action='store_true', default=False, help='run static analysis and exit')
@@ -74,7 +76,7 @@ print("info: Analyzing HDL source code ...")
 item: Hdl
 for item in rtl_order:
     print('  -', Env.quote_str(item.path))
-    Command(GHDL_PATH) \
+    Command('ghdl') \
         .args(['-a', '--ieee=synopsys', '--std='+args.std, '--work='+str(item.lib), item.path]) \
         .spawn() \
         .unwrap()
@@ -96,8 +98,6 @@ if USE_VERITI == True and py_model != None:
     design_if = Command("orbit").arg("get").arg(ORBIT_TOP).arg("--json").output()[0]
     bench_if = Command("orbit").arg("get").arg(ORBIT_BENCH).arg("--json").output()[0]
     
-    print("info: Running Python software model ...")
-    
     # prepare the proper context
     veriti.config.set(design_if=design_if, bench_if=bench_if, work_dir='.', generics=generics, seed=args.seed)
     pass
@@ -107,6 +107,7 @@ if RUN_MODEL == True and py_model != None:
     # switch the sys.path[0] from this script's path to the model's path
     this_script_path = sys.path[0]
     sys.path[0] = os.path.dirname(py_model)
+    print("info: Running Python software model ...")
     # run the python model script in its own namespace
     runpy.run_path(py_model, init_globals={})
     sys.path[0] = this_script_path
@@ -126,7 +127,7 @@ VCD_FILE = str(BENCH)+'.vcd'
 
 # run simulation
 print("info: Starting VHDL simulation for testbench", Env.quote_str(BENCH), "...")
-status: Status = Command(GHDL_PATH) \
+status: Status = Command('ghdl') \
     .args(['-r', '--ieee=synopsys', BENCH, '--vcd='+VCD_FILE, severity_arg]) \
     .args(['-g' + item.to_str() for item in generics]) \
     .spawn(verbose=False)

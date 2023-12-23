@@ -1,8 +1,16 @@
 # `orbit-profile`
 
-### A collection of configurations and plugins for integration with [Orbit](https://github.com/c-rus/orbit).
+A collection of configurations and plugins for integration with [Orbit](https://github.com/c-rus/orbit).
+
+### Plugins
+
+The following plugins are implemented in this profile:
+
+- `gsim`: Run simulations using the GHDL simulator
+- `msim`: Run simulations using the ModelSim simulator
+- `quartz`: Run end-to-end FPGA toolflows using Intel Quartus Prime
   
-## Installing
+### Installing
 
 1. Download the profile:
 
@@ -23,10 +31,11 @@ orbit config --append include="profiles/crus/config.toml"
 
 4. (__Optional__) Install the Python implementation of `veriti` - a verification library for assisting in simulating HDL designs. Follow the instruction [here](https://github.com/c-rus/veriti.git#installing). This package is used in some plugin workflows.
 
-## Updating
+### Updating
 
 To receive the latest changes:
 
 ```
 git -C "$(orbit env ORBIT_HOME)/profiles/crus" pull
 ```
+
