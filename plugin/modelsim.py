@@ -13,7 +13,7 @@ from mod import Env, Generic, Command, Hdl, Blueprint
 SIM_DIR = "msim"
 
 # temporarily append modelsim installation path to PATH env variable
-MODELSIM_PATH = os.environ.get("ORBIT_ENV_MODELSIM_PATH", missing_ok=True)
+MODELSIM_PATH = Env.read("ORBIT_ENV_MODELSIM_PATH", missing_ok=True)
 Env.add_path(MODELSIM_PATH)
 
 DO_FILE = 'orbit.do'
@@ -27,7 +27,7 @@ parser.add_argument('--enable-veriti', default=0, metavar='BIT', help="toggle th
 
 parser.add_argument('--lint', action='store_true', default=False, help='perform static code analysis and exit')
 parser.add_argument('--run-model', default=1, metavar='BIT', help="run the pre-simulation script")
-parser.add_argument('--run-sim', default=1, metaver='BIT', help='start process to run through simulation')
+parser.add_argument('--run-sim', default=1, metavar='BIT', help='start process to run through simulation')
 
 parser.add_argument('--gui', action='store_true', default=False, help='open the gui')
 parser.add_argument('--review', action='store_true', default=False, help='review the previous simulation')
@@ -53,7 +53,7 @@ top_level_config = args.top_config
 
 REVIEW = args.review
 OPEN_GUI = args.gui
-SETUP_SIM_ONLY = int(args.run_sim) != 0
+SETUP_SIM_ONLY = int(args.run_sim) == 0
 LINT_ONLY = args.lint
 CLEAN = args.clean
 
