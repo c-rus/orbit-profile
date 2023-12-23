@@ -1,19 +1,14 @@
-##! File        : ghdl.py
-##! Engineer    : Chase Ruskin
-##!
-##! Modified    : 2023-06-29
-##! Created     : 2022-08-20
-##!
-##! Details     :
-##!   Defines a common workflow for working with the GHDL simulator and software
-##!   models written in Python used for generating test vector I/O. Generics
-##!   are passed to the software script as well as the VHDL testbench for
-##!   synchronization across code
-##!
-##!   The script is written to be used as the entry-point to an Orbit plugin.
-##!
-##! References  :
-##!     [1] https://github.com/ghdl/ghdl
+# Project: orbit-profile
+# Script: ghdl.py
+#
+# Defines a common workflow for working with the GHDL simulator and software
+# models written in Python used for generating test vector I/O. Generics
+# are passed to the software script as well as the VHDL testbench for
+# synchronization across code
+#
+# The script is written to be used as the entry-point to an Orbit plugin.
+#
+# [1] https://github.com/ghdl/ghdl
 
 import os, sys
 import argparse, random
@@ -21,44 +16,38 @@ from typing import List
 
 from mod import Command, Status, Env, Generic, Blueprint, Hdl
 
-# --- Constants ----------------------------------------------------------------
-
-# directory to store artifacts within build directory.
-SIM_DIR = 'ghdl'
-
-# define python path
-PYTHON_PATH = os.path.basename(sys.executable)
+# directory to store artifacts within build directory
+SIM_DIR = 'gsim'
 
 # define ghdl path
 GHDL_PATH: str = Env.read("ORBIT_ENV_GHDL_PATH", default='ghdl')
 # define a vcd viewer
 VCD_VIEWER: str = Env.read("ORBIT_ENV_VCD_VIEWER")
 
-# --- Define command-line arguments --------------------------------------------
-
-# arguments
+## Handle command-line arguments
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 
 parser.add_argument('--view', action='store_true', default=False, help='open the vcd file in a waveform viewer')
 parser.add_argument('--lint', action='store_true', default=False, help='run static analysis and exit')
 parser.add_argument('--seed', action='store', type=int, nargs='?', default=None, const=random.randrange(sys.maxsize), metavar='NUM', help='set the randomness seed')
-parser.add_argument('--generic', '-g', action='append', type=Generic.from_arg, default=[], metavar='key=value', help='override top-level VHDL generics')
-parser.add_argument('--std', action='store', default='93', metavar='edition', help="specify the VHDL edition (87, 93, 02, 08, 19)")
-parser.add_argument('--enable-veriti', default=1, metavar='ENABLE', help="toggle the usage of veriti verification library")
-parser.add_argument('--run-model', default=1, metavar='ENABLE', help="toggle the generation of test vectors")
-args, unknown = parser.parse_known_args()
+parser.add_argument('--generic', '-g', action='append', type=Generic.from_arg, default=[], metavar='KEY=VALUE', help='override top-level VHDL generics')
+parser.add_argument('--std', action='store', default='93', metavar='EDITION', help="specify the VHDL edition (87, 93, 02, 08, 19)")
+parser.add_argument('--enable-veriti', default=1, metavar='BIT', help="toggle the usage of veriti verification library")
+parser.add_argument('--run-model', default=1, metavar='BIT', help="toggle the generation of test vectors")
+
+args = parser.parse_args()
 
 USE_VERITI = int(args.enable_veriti) != 0
 RUN_MODEL = int(args.run_model) != 0
+
 # import and use the veriti library
 if USE_VERITI == True:
     import veriti
-    pass
 
 generics: List[Generic] = args.generic
 
-# --- Collect data from the blueprint ------------------------------------------
+## Read blueprint
 
 # enter the build directory for the rest of the workflow
 BUILD_DIR = Env.read("ORBIT_BUILD_DIR", missing_ok=False)
@@ -66,7 +55,7 @@ os.chdir(BUILD_DIR)
 
 py_model: str = None
 rtl_order: List[Hdl] = []
-
+# collect data from the blueprint
 for rule in Blueprint().parse():
     if rule.fileset == 'VHDL-RTL' or rule.fileset == 'VHDL-SIM':
         rtl_order += [Hdl(rule.identifier, rule.path)]
@@ -74,7 +63,7 @@ for rule in Blueprint().parse():
         py_model = rule.path
     pass
 
-# --- Perform workflow ---------------------------------------------------------
+## Run backend workflow
 
 # enter GHDL simulation working directory
 os.makedirs(SIM_DIR, exist_ok=True)
@@ -96,7 +85,6 @@ if args.lint == True:
     print("info: Static analysis complete")
     exit(0)
 
-
 # pre-simulation hook: generate test vectors
 if USE_VERITI == True and py_model != None:
     import veriti
@@ -112,6 +100,7 @@ if USE_VERITI == True and py_model != None:
     
     # prepare the proper context
     veriti.config.set(design_if=design_if, bench_if=bench_if, work_dir='.', generics=generics, seed=args.seed)
+    pass
 
 if RUN_MODEL == True and py_model != None:
     import runpy, sys, os

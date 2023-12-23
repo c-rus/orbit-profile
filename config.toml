@@ -2,49 +2,9 @@
 github-user = "c-rus"
 
 
-[[protocol]]
-name = "zip-op"
-summary = "Example protocol for handling zip file urls"
-command = "python"
-args = ["./protocol/download.py"]
-
-
-[[protocol]]
-name = "git-op2"
-summary = "Accesses packages through git to handle remote repositories."
-command = "git"
-args = ["clone", "-b", "{{ orbit.ip.version }}", "{{ orbit.ip.source.url }}", "{{ orbit.queue }}/{{ orbit.ip.name }}"]
-
-
-[[protocol]]
-name = "git-op"
-summary = "Simple protocol for handling remote git repositories"
-command = "python"
-args = ["./protocol/git-op.py"]
-details = """
-Invokes the git cli tool to clone the repository the destination and checkout
-the defined tag. If the tag is omitted, it will attempt to checkout using the
-package's version field from the lock file entry.
-
-Format:
-    <url>[###<tag>]
-
-Dependencies:
-    Python (tested: 3.11.3)
-    Git (tested: 2.36.0)
-"""
-
-
-[[protocol]]
-name = "priv-zip-op"
-command = "curl"
-# curl -u <USER> -L -o <FILENAME> https://github.com/<USER>/<REPO>/archive/master.zip
-args = ["-u", "{{orbit.env.github_user}}", "-L", "{{orbit.ip.source.url}}", "--output-dir", "{{orbit.queue}}"]
-
-
 [[plugin]]
 name = "quartus"
-summary = "Complete toolflow for Intel Quartus Prime backend program"
+summary = "Run end-to-end FPGA toolflow with Intel Quartus Prime"
 command = "python"
 args = ["./plugin/quartus.py"]
 fileset.board-cf = "*.board"
@@ -82,8 +42,8 @@ Dependencies:
 
 
 [[plugin]]
-name   = "ghdl"
-summary = "Backend script for simulating VHDL with GHDL"
+name   = "gsim"
+summary = "Run a simulation with GHDL"
 command = "python"
 args    = ["./plugin/ghdl.py"]
 fileset.py-model = "{{orbit.bench}}.py"
@@ -92,22 +52,22 @@ Analyzes and simulates a testbench with GHDL. If a vcd viewer program is
 specified with the corresponding environment variable and --view is used, then 
 the vcd file will be the first argument to the command.
 
-Generics set on the command-line with '--generic' are synchronized with the ghdl
-simulation and the Python software model script. Generics are entered in the
-Python model script as command-line arguments in the format '-g=<key>=<value>'.
+Generics set on the command-line with '--generic' are synchronized with the GHDL
+simulation and the Python software model script. Generics are passed to the
+Python model script and are accessed through the 'veriti' library.
 
 By default, this plugin uses the VHDL-93 standard for compilation.
 
 Usage:
-    orbit build --plugin ghdl -- [options]
+    orbit build --plugin gsim -- [options]
 
 Options:
     --help, -h                      show help message and exit
     --view                          open the vcd file in a waveform viewer
     --lint                          run static analysis and exit
     --seed [num]                    set the randomness seed
-    --enable-veriti <value>         enable/disable python library 'veriti'
-    --run-model <value>             enable/disable running pre-sim script
+    --enable-veriti <bit>         enable/disable python library 'veriti'
+    --run-model <bit>             enable/disable running pre-sim script
     --generic, -g <key>=<value>     override top-level VHDL generics
     --std <edition>                 specify the VHDL edition (87, 93, 02, 08, 19)
 
@@ -123,7 +83,7 @@ Dependencies:
 
 [[plugin]]
 name = "msim"
-summary = "Backend script for simulating HDL with ModelSim"
+summary = "Run a simulation with ModelSim"
 command = "python"
 args    = ["./plugin/modelsim.py"]
 fileset.py-model = "{{orbit.bench}}.py"
@@ -293,3 +253,43 @@ Dependencies:
     Vivado (tested: 2019.2)
     Python (tested: 3.9.7)
 """
+
+
+[[protocol]]
+name = "zip-op"
+summary = "Example protocol for handling zip file urls"
+command = "python"
+args = ["./protocol/download.py"]
+
+
+[[protocol]]
+name = "git-op2"
+summary = "Accesses packages through git to handle remote repositories."
+command = "git"
+args = ["clone", "-b", "{{ orbit.ip.version }}", "{{ orbit.ip.source.url }}", "{{ orbit.queue }}/{{ orbit.ip.name }}"]
+
+
+[[protocol]]
+name = "git-op"
+summary = "Simple protocol for handling remote git repositories"
+command = "python"
+args = ["./protocol/git-op.py"]
+details = """
+Invokes the git cli tool to clone the repository the destination and checkout
+the defined tag. If the tag is omitted, it will attempt to checkout using the
+package's version field from the lock file entry.
+
+Format:
+    <url>[###<tag>]
+
+Dependencies:
+    Python (tested: 3.11.3)
+    Git (tested: 2.36.0)
+"""
+
+
+[[protocol]]
+name = "priv-zip-op"
+command = "curl"
+# curl -u <USER> -L -o <FILENAME> https://github.com/<USER>/<REPO>/archive/master.zip
+args = ["-u", "{{orbit.env.github_user}}", "-L", "{{orbit.ip.source.url}}", "--output-dir", "{{orbit.queue}}"]
