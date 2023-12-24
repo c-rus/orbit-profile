@@ -1,5 +1,5 @@
 # Project: orbit-profile
-# Script: quartus.py
+# Plugin: quartz
 #
 # Creates a Quartus project to execute any stage of the FPGA toolchain
 # workflow. This script has the ability to override the top-level generics

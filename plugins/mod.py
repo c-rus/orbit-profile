@@ -1,8 +1,9 @@
-# File: mod.py
-# Engineer: Chase Ruskin
-# Details:
-#   Common functions used across plugins written in Python.
-#
+# Project: orbit-profile
+# Module: mod.py
+# 
+# This module contains common low-level functions used across plugins written 
+# in Python.
+
 import os
 from typing import List, Tuple
 from enum import Enum
@@ -53,7 +54,6 @@ class Hdl:
 
 
 class Rule:
-
     def __init__(self, fileset, identifier, path):
         self.fileset = fileset
         self.identifier = identifier
@@ -63,7 +63,6 @@ class Rule:
 
 
 class Blueprint:
-
     def __init__(self):
         self._file = Env.read("ORBIT_BLUEPRINT", missing_ok=False)
         pass

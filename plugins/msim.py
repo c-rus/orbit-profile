@@ -1,5 +1,5 @@
 # Project: orbit-profile
-# Script: modelsim.py
+# Plugin: msim
 # 
 # Runs ModelSim in batch mode to perform HDL simulations.
 # 

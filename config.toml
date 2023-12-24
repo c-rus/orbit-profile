@@ -6,7 +6,7 @@ github-user = "c-rus"
 name = "quartz"
 summary = "Run end-to-end FPGA toolflow with Intel Quartus Prime"
 command = "python"
-args = ["./plugin/quartus.py"]
+args = ["./plugins/quartz.py"]
 fileset.board-cf = "*.board"
 fileset.bdf-file = "*.bdf"
 details = """
@@ -48,7 +48,7 @@ Dependencies:
 name   = "gsim"
 summary = "Run a simulation with GHDL"
 command = "python"
-args    = ["./plugin/ghdl.py"]
+args    = ["./plugins/gsim.py"]
 fileset.py-model = "{{ orbit.bench }}.py"
 details = """
 Analyzes and simulates a testbench with GHDL. If a vcd viewer program is 
@@ -88,7 +88,7 @@ Dependencies:
 name = "msim"
 summary = "Run a simulation with ModelSim"
 command = "python"
-args    = ["./plugin/modelsim.py"]
+args    = ["./plugins/msim.py"]
 fileset.py-model = "{{ orbit.bench }}.py"
 fileset.do-file = "{{ orbit.bench }}.do"
 details = """
@@ -208,7 +208,7 @@ Dependencies:
 name = "zipr"
 summary = "Compress files into a submission-like format"
 command = "python"
-args = ["./plugin/zipr.py"]
+args = ["./plugins/zipr.py"]
 fileset.zip-list = "submission.txt"
 details = """
 By default, collects files listed in ZIP-LIST file and zips them into a
@@ -234,7 +234,7 @@ Dependencies:
 name = "xsim"
 summary = "Perform simulation with Vivado's simulator"
 command = "python"
-args = ["./plugin/xsim.py"]
+args = ["./plugins/xsim.py"]
 fileset.xsim-tcl = "*_xsim.tcl"
 fileset.xsim-wcfg = "*.wcfg"
 fileset.py-model = "{{orbit.bench}}.py"
@@ -273,7 +273,7 @@ Dependencies:
 name = "zip-op"
 summary = "Example protocol for handling zip file urls"
 command = "python"
-args = ["./protocol/download.py"]
+args = ["./protocols/download.py"]
 
 
 [[protocol]]
@@ -287,7 +287,7 @@ args = ["clone", "-b", "{{ orbit.ip.version }}", "{{ orbit.ip.source.url }}", "{
 name = "git-op"
 summary = "Simple protocol for handling remote git repositories"
 command = "python"
-args = ["./protocol/git-op.py"]
+args = ["./protocols/git-op.py"]
 details = """
 Invokes the git cli tool to clone the repository the destination and checkout
 the defined tag. If the tag is omitted, it will attempt to checkout using the

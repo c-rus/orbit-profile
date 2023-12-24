@@ -1,5 +1,5 @@
 # Project: orbit-profile
-# Script: ghdl.py
+# Plugin: gsim
 #
 # Defines a common workflow for working with the GHDL simulator and software
 # models written in Python used for generating test vector I/O. Generics
