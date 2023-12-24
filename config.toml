@@ -136,7 +136,7 @@ Dependencies:
 name   = "viv-no-xpr"
 summary = "Backend Vivado non-project mode toolflow"
 command = "vivado"
-args    = ["-mode", "batch", "-nojournal", "-nolog", "-source", "./plugin/viv-no-xpr.tcl", "-tclargs"]
+args    = ["-mode", "batch", "-nojournal", "-nolog", "-source", "./plugins/viv-no-xpr.tcl", "-tclargs"]
 fileset.xil-xdc = "*.xdc"
 details = """
 Provides entire basic toolchain for Xilinx Vivado: synthesis, implementation,
@@ -182,7 +182,7 @@ Examples:
 name = "viv-xpr"
 summary = "Backend Vivado project mode toolflow"
 command = "vivado"
-args = ["-mode", "batch", "-nojournal", "-nolog", "-source", "./plugin/viv-xpr.tcl", "-tclargs"]
+args = ["-mode", "batch", "-nojournal", "-nolog", "-source", "./plugins/viv-xpr.tcl", "-tclargs"]
 fileset.xil-xdc = "*.xdc"
 fileset.py-model = "{{orbit.bench}}.py"
 details = """
