@@ -137,12 +137,11 @@ if BYPASS_FAILURE == False:
 
 # post-simulation hook: analyze outcomes
 if USE_VERITI == True:
-    # todo: need to change from hard-coded value to something fetched from veriti library
-    log_file = 'events.log'
+    log_file = veriti.log.get_name()
     print("info: Simulation history saved at:", veriti.log.get_event_log_path(log_file))
     print("info: Computing results ...")
     print("info: Simulation score:", veriti.log.report_score(log_file))
-    rc = 0 if veriti.log.check('events.log', None) == True else 101
+    rc = 0 if veriti.log.check(log_file, None) == True else 101
     exit(rc)
 else:
     print('info: Simulation complete')
