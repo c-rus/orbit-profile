@@ -137,11 +137,12 @@ if BYPASS_FAILURE == False:
 
 # post-simulation hook: analyze outcomes
 if USE_VERITI == True:
-    log_file = veriti.log.get_name()
-    print("info: Simulation history saved at:", veriti.log.get_event_log_path(log_file))
+    print("info: Coverage report saved at:", veriti.coverage.get_coverage_report_path())
+    print("info: Simulation history saved at:", veriti.log.get_event_log_path())
     print("info: Computing results ...")
-    print("info: Simulation score:", veriti.log.report_score(log_file))
-    rc = 0 if veriti.log.check(log_file, None) == True else 101
+    print("info: Coverage score:", veriti.coverage.report_score())
+    print("info: Simulation score:", veriti.log.report_score())
+    rc = 0 if veriti.log.check() == True and veriti.coverage.check() == True else 101
     exit(rc)
 else:
     print('info: Simulation complete')
