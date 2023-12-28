@@ -270,40 +270,22 @@ Dependencies:
 
 
 [[protocol]]
-name = "zip-op"
-summary = "Example protocol for handling zip file urls"
+name = "zipp"
+summary = "Uses requests to handle zip files."
 command = "python"
-args = ["./protocols/download.py"]
+args = ["./protocols/zipp.py", "{{ orbit.ip.source.url }}", "{{ orbit.queue }}"]
 
 
 [[protocol]]
-name = "git-op2"
+name = "gitt"
 summary = "Accesses packages through git to handle remote repositories."
 command = "git"
 args = ["clone", "-b", "{{ orbit.ip.version }}", "{{ orbit.ip.source.url }}", "{{ orbit.queue }}/{{ orbit.ip.name }}"]
 
 
 [[protocol]]
-name = "git-op"
-summary = "Simple protocol for handling remote git repositories"
-command = "python"
-args = ["./protocols/git-op.py"]
-details = """
-Invokes the git cli tool to clone the repository the destination and checkout
-the defined tag. If the tag is omitted, it will attempt to checkout using the
-package's version field from the lock file entry.
-
-Format:
-    <url>[###<tag>]
-
-Dependencies:
-    Python (tested: 3.11.3)
-    Git (tested: 2.36.0)
-"""
-
-
-[[protocol]]
-name = "priv-zip-op"
+name = "curll"
 command = "curl"
+summary = "Accesses packages through curl to handle zip files."
+args = ["-u", "{{ orbit.env.github.user }}", "-L", "{{ orbit.ip.source.url }}", "--output-dir", "{{ orbit.queue }}"]
 # curl -u <USER> -L -o <FILENAME> https://github.com/<USER>/<REPO>/archive/master.zip
-args = ["-u", "{{orbit.env.github_user}}", "-L", "{{orbit.ip.source.url}}", "--output-dir", "{{orbit.queue}}"]

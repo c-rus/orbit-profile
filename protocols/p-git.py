@@ -1,9 +1,7 @@
-# File: git-op.py
-# Author: Chase Ruskin
-# Revised: 2023-06-04
-# Details:
-#   Downloads packages that use git remote repositories.
+# Project: orbit-profile 
+# Protocol: p-git.py
 #
+# Downloads packages that use git remote repositories.
 import sys, os
 import subprocess
 import random
