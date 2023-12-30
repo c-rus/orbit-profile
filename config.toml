@@ -273,19 +273,19 @@ Dependencies:
 name = "zipp"
 summary = "Uses requests to handle zip files."
 command = "python"
-args = ["./protocols/zipp.py", "{{ orbit.ip.source.url }}", "{{ orbit.queue }}"]
+args = ["./protocols/zipp.py", "{{ orbit.ip.source.url }}"]
 
 
 [[protocol]]
 name = "gitt"
 summary = "Accesses packages through git to handle remote repositories."
 command = "git"
-args = ["clone", "-b", "{{ orbit.ip.version }}", "{{ orbit.ip.source.url }}", "{{ orbit.queue }}/{{ orbit.ip.name }}"]
+args = ["clone", "-b", "{{ orbit.ip.version }}", "{{ orbit.ip.source.url }}"]
 
 
 [[protocol]]
 name = "curll"
 command = "curl"
 summary = "Accesses packages through curl to handle zip files."
-args = ["-u", "{{ orbit.env.github.user }}", "-L", "{{ orbit.ip.source.url }}", "--output-dir", "{{ orbit.queue }}"]
+args = ["-u", "{{ orbit.env.github.user }}", "-L", "{{ orbit.ip.source.url }}"]
 # curl -u <USER> -L -o <FILENAME> https://github.com/<USER>/<REPO>/archive/master.zip

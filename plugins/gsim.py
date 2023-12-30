@@ -51,10 +51,6 @@ generics: List[Generic] = args.generic
 
 ## Read blueprint
 
-# enter the build directory for the rest of the workflow
-BUILD_DIR = Env.read("ORBIT_BUILD_DIR", missing_ok=False)
-os.chdir(BUILD_DIR)
-
 py_model: str = None
 rtl_order: List[Hdl] = []
 # collect data from the blueprint

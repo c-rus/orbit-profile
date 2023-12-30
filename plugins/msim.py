@@ -67,10 +67,6 @@ if REVIEW == True:
 
 ## Process blueprint
 
-# enter the build directory for the rest of the workflow
-BUILD_DIR = Env.read("ORBIT_BUILD_DIR", missing_ok=False)
-os.chdir(BUILD_DIR)
-
 tb_do_file: str = None
 py_model: str = None
 compile_order: List[Hdl] = []

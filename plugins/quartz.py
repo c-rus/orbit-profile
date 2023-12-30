@@ -121,10 +121,6 @@ else:
 
 ## Collect data from the blueprint
 
-# enter the build directory
-BUILD_DIR = Env.read("ORBIT_BUILD_DIR", missing_ok=False)
-os.chdir(BUILD_DIR)
-
 # list of (lib, path)
 vhdl_files = []
 vlog_files = []
