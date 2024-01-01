@@ -124,7 +124,7 @@ VCD_FILE = str(BENCH)+'.vcd'
 # run simulation
 print("info: Starting VHDL simulation for testbench", Env.quote_str(BENCH), "...")
 status: Status = Command('ghdl') \
-    .args(['-r', '--ieee=synopsys', BENCH, '--vcd='+VCD_FILE, severity_arg]) \
+    .args(['-r', '--ieee=synopsys', '--std='+args.std, BENCH, '--vcd='+VCD_FILE, severity_arg]) \
     .args(['-g' + item.to_str() for item in generics]) \
     .spawn(verbose=False)
 
